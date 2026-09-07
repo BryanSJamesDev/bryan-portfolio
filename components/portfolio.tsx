@@ -10,7 +10,26 @@ import { searchClaims } from "@/lib/search";
 const links = {github:"https://github.com/BryanSJamesDev", linkedin:"https://www.linkedin.com/in/bryan-james-1530891b3/", resume:"/resume"};
 const about = "I'm pursuing an MSCS at Northeastern University's Khoury College of Computer Sciences, where I started in September 2025. I build AI agents, search systems and data pipelines, then test what holds up.";
 function External({href,children,className=""}:{href:string;children:ReactNode;className?:string}){return <a className={className} href={href} target="_blank" rel="noopener noreferrer">{children}<ArrowUpRight size={16} aria-hidden="true"/></a>}
-function AmbientGlow(){const pts=["70,238 124,269 124,331 70,362 16,331 16,269","177,238 231,269 231,331 177,362 123,331 123,269","123,145 177,176 177,238 123,269 69,238 69,176","20,337 62,361 62,409 20,433 -22,409 -22,361"];return <svg className="ambient-glow" aria-hidden="true" viewBox="0 0 300 340"><g className="glow-halo">{pts.map(p=><polygon key={p} points={p}/>)}</g><g className="glow-core">{pts.map(p=><polygon key={p} points={p}/>)}</g></svg>}
+function AmbientGlow(){
+ const pts=["70,238 124,269 124,331 70,362 16,331 16,269","177,238 231,269 231,331 177,362 123,331 123,269","123,145 177,176 177,238 123,269 69,238 69,176","20,337 62,361 62,409 20,433 -22,409 -22,361"];
+ return <svg className="ambient-glow" aria-hidden="true" focusable="false" viewBox="0 0 300 340">
+  <defs>
+   <filter id="ambient-gold-bloom" filterUnits="userSpaceOnUse" x="-80" y="80" width="400" height="430" colorInterpolationFilters="sRGB">
+    <feGaussianBlur in="SourceGraphic" stdDeviation="14" result="wide"/>
+    <feGaussianBlur in="SourceGraphic" stdDeviation="5" result="near"/>
+    <feGaussianBlur in="SourceGraphic" stdDeviation="1.5" result="tube"/>
+    <feMerge>
+     <feMergeNode in="wide"/>
+     <feMergeNode in="near"/>
+     <feMergeNode in="tube"/>
+     <feMergeNode in="SourceGraphic"/>
+    </feMerge>
+   </filter>
+  </defs>
+  <g className="glow-halo" filter="url(#ambient-gold-bloom)">{pts.map(p=><polygon key={p} points={p}/>)}</g>
+  <g className="glow-core">{pts.map(p=><polygon key={p} points={p}/>)}</g>
+ </svg>
+}
 function Terminal(){
  const [command,setCommand]=useState(""); const [history,setHistory]=useState<{command:string;output:string}[]>([]);const input=useRef<HTMLInputElement>(null);const out=useRef<HTMLDivElement>(null);
  useEffect(()=>{out.current?.scrollTo({top:out.current.scrollHeight});},[history]);
@@ -39,3 +58,4 @@ export default function Portfolio(){
  const railSections=[...ordered,'contact'];
  return <><a href="#main" className="skip-link">Skip to content</a><AmbientGlow/><div className={`scroll-rail ${pastHero?'shown':''}`} aria-hidden="true"><div className="rail-track"><div className="rail-fill" style={{height:`${scroll*100}%`}}/>{railSections.map((id,i)=><span key={id} className={`rail-dot ${active===id?'active':''}`} style={{top:`${(i/(railSections.length-1))*100}%`}}/>)}</div></div><div className="utilities"><button aria-label={sound?'Sound on':'Sound off'} aria-pressed={sound} onClick={()=>{setSound(!sound);try{localStorage.setItem('sound',!sound?'on':'off');}catch{}}}>{sound?<Volume2 size={17}/>:<VolumeX size={17}/>}</button><button aria-label={dark?'Switch to light mode':'Switch to dark mode'} aria-pressed={dark} onClick={()=>{setDark(!dark);document.documentElement.dataset.theme=!dark?'dark':'light';try{localStorage.setItem('theme',!dark?'dark':'light');}catch{}}}>{dark?<Sun size={17}/>:<Moon size={17}/>}</button></div><nav aria-label="Main navigation" className={`sticky-nav ${pastHero?'shown':''}`} inert={!pastHero}><a href="#hero" className="nav-brand">bj<span className="accent">.</span></a><div>{['work','experience','about','contact'].map(s=><a key={s} href={`#${s}`} aria-current={active===s?'location':undefined}>{s}</a>)}</div></nav><main id="main"><header className="hero" id="hero" ref={hero}><div className="hero-top"><span className="mono">bryan.james</span><span className="mono hero-location">Northeastern · MSCS</span></div><h1>Bryan James<span className="accent">.</span></h1><p className="positioning">AI/ML engineer, data engineering,<br className="desktop-break"/> and full-stack development.</p><p className="personal-line">Build it. Then see what holds up.</p><div className="availability"><span className="hex"/><span>Available for Fall 2026, Spring 2027, and Summer 2027<br className="desktop-break"/> Internships/Co-ops</span></div><div className="hero-links"><External href={links.github}><Code2 size={17}/>GitHub</External><External href={links.linkedin}><BriefcaseBusiness size={17}/>LinkedIn</External><a href="mailto:bryansamjames@gmail.com"><Mail size={17}/>Email<ArrowUpRight size={16}/></a><a href="/resume"><FileText size={17}/>Resume<ArrowUpRight size={16}/></a></div><div className="audience"><span id="audience-label" className="mono small">Viewing as</span><RadioGroup aria-labelledby="audience-label" value={audience} onValueChange={setAudience} className="audience-options"><label className={audience==='startup'?'selected':''}><RadioGroupItem value="startup"/>Startup</label><label className={audience==='enterprise'?'selected':''}><RadioGroupItem value="enterprise"/>Enterprise</label></RadioGroup><a href={audience==='startup'?'#work':'#experience'} className="jump-link">{audience==='startup'?'Explore the work':'View experience'}<ArrowDown size={15}/></a></div></header><Terminal/><div aria-live="polite" className="sr-only">{audience==='startup'?'Projects first.':'Experience and About first.'}</div>{ordered.map(s=><div key={s}>{sections[s]}</div>)}<footer id="contact" className="section contact"><p className="eyebrow reveal">05 / next conversation</p><h2 className="reveal">Have something worth building?</h2><a className="email-link" href="mailto:bryansamjames@gmail.com">bryansamjames@gmail.com<ArrowUpRight/></a><div className="footer-links"><External href={links.github}>GitHub</External><External href={links.linkedin}>LinkedIn</External><External href="https://bryanjames.hashnode.dev">Blog</External><a href="/resume">Resume<ArrowUpRight size={16}/></a></div><div className="footer-end"><span>© {new Date().getFullYear()} Bryan James</span><a href="#hero">Back to top ↑</a></div></footer></main><a href="#terminal" className="terminal-tab"><TerminalIcon size={15}/>terminal</a></>;
 }
+
