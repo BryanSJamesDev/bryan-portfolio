@@ -23,3 +23,35 @@
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*:before,*:after{animation:none!important;transition:none!important}.reveal.pending{opacity:1;transform:none}.click-hex{display:none}}
 .line-word{display:inline-block;max-width:100%;overflow-wrap:anywhere}.reveal.visible .line-word{animation:pop .4s cubic-bezier(.16,1,.3,1) both;animation-delay:var(--line-delay,0ms)}.project.reveal.visible{animation:none}.project.reveal.pending{transform:none}.line-text{position:relative}.project .tags{font-size:12px}.tag{font-size:12px}.pipelines .mono,.pipelines p{font-size:12px}.pipelines .mono{white-space:normal}
 
+/* ── ThreeUI AnimatedTopDock — Sable Dock variant (source rev 5a736cd) ─────────
+   Only the rules the sable dock uses, lifted from src/shaders/threeui.css.
+   Verbatim except: (1) @font-face src -> self-hosted woff2; (2) the .top-dock-shell
+   wrapper + the two frame overrides under it, which turn the source's demo frame
+   into fixed site-nav chrome. The capsule itself is unchanged. */
+@font-face{font-family:"ThreeUI Fragment Mono";font-style:normal;font-weight:400;font-display:swap;src:url("/fonts/fragment-mono.woff2") format("woff2")}
+.animated-top-dock-component{position:relative;width:100%;height:100%;min-width:0;min-height:0;overflow:hidden;container-type:inline-size;color:#ecece8;background:radial-gradient(circle at 50% 20%,rgba(255,255,255,.035),transparent 34%),#080808;display:grid;place-items:center;isolation:isolate}
+.animated-top-dock-component::after{position:absolute;inset:0;z-index:5;pointer-events:none;content:"";opacity:.12;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.16'/%3E%3C/svg%3E");mix-blend-mode:soft-light}
+.animated-top-dock__nav{position:absolute;top:clamp(24px,5cqw,46px);left:50%;z-index:10;display:flex;align-items:flex-start;gap:3px;height:38px;padding:4px;overflow:visible;border:1px solid #292929;border-radius:11px;background:rgba(14,14,14,.86);box-shadow:0 12px 34px rgba(0,0,0,.48),inset 0 1px rgba(255,255,255,.035);-webkit-backdrop-filter:blur(18px) saturate(75%);backdrop-filter:blur(18px) saturate(75%);transform:translateX(-50%);isolation:isolate}
+.animated-top-dock__item{position:relative;z-index:6;display:inline-flex;flex:none;align-items:center;justify-content:center;height:28px;min-width:0;padding:0;border:1px solid transparent;border-radius:7px;outline:none;color:#858580;background:rgba(21,21,20,.9);font:400 10px/1 "ThreeUI Fragment Mono",ui-monospace,monospace;letter-spacing:.1em;white-space:nowrap;-webkit-backdrop-filter:blur(14px) saturate(70%);backdrop-filter:blur(14px) saturate(70%);transform-origin:50% 0;transition:color .15s,border-color .18s,background .18s,box-shadow .18s;will-change:width,height,transform;cursor:pointer}
+.animated-top-dock__item[data-dock-near="true"],.animated-top-dock__item:focus-visible{z-index:7;color:#ecece8;border-color:#41413e;background:rgba(27,27,26,.94);box-shadow:0 7px 16px rgba(0,0,0,.26)}
+.animated-top-dock__logo{width:28px;height:28px;overflow:hidden;background:#e8e8e3}
+.animated-top-dock__logo svg{display:block;width:100%;height:100%}
+.animated-top-dock__link{gap:6px;width:94px;padding:0 9px}
+.animated-top-dock__link[aria-pressed="true"],.animated-top-dock__link[aria-current="location"]{color:#111;border-color:#e8e8e3;background:#e8e8e3;box-shadow:0 7px 18px rgba(0,0,0,.28)}
+.animated-top-dock__icon{display:inline-flex;flex:none;align-items:center;justify-content:center;width:13px;height:13px;opacity:.62;transition:opacity .16s}
+.animated-top-dock__icon svg{display:block;width:100%;height:100%;fill:none;stroke:currentColor;stroke-width:1.2;stroke-linecap:round;stroke-linejoin:round}
+.animated-top-dock__item[data-dock-near="true"] .animated-top-dock__icon,.animated-top-dock__item:focus-visible .animated-top-dock__icon{opacity:1}
+/* integration wrapper: fixed, centred, revealed past the hero — same trigger the
+   .sticky-nav it replaced used. .sticky-nav below is kept only as the fallback. */
+.top-dock-shell{position:fixed;top:0;left:0;right:0;height:104px;z-index:30;visibility:hidden;opacity:0;transition:opacity .18s ease;pointer-events:none}
+.top-dock-shell.shown{visibility:visible;opacity:1}
+.top-dock-shell .animated-top-dock-component{background:none;overflow:visible}
+.top-dock-shell .animated-top-dock-component::after{display:none}
+.top-dock-shell .animated-top-dock__nav,.top-dock-shell .animated-top-dock__item,.top-dock-shell .sticky-nav{pointer-events:auto}
+@media(max-width:600px){.animated-top-dock__nav{top:24px;gap:2px;height:36px}.animated-top-dock__item{height:26px!important;transform:none!important}.animated-top-dock__logo{width:26px!important;height:26px!important}.animated-top-dock__link{width:auto!important;padding:0 7px;font-size:8px;letter-spacing:.07em}.animated-top-dock__icon{display:none}
+ /* the fitted capsule can exceed a phone's width; pin it to the safe area,
+    keep clear of the fixed sound/theme controls (as .sticky-nav did with its
+    padding-right), and distribute the now-static items instead of clipping */
+ .top-dock-shell .animated-top-dock__nav{left:10px;right:100px;transform:none;justify-content:space-between}}
+@media(prefers-reduced-motion:reduce){.animated-top-dock__item{transform:none!important}}
+
