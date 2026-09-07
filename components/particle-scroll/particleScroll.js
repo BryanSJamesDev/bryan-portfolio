@@ -392,9 +392,18 @@ export function mountParticleScroll(selectorList, options = {}) {
   const scroller = document.scrollingElement || document.documentElement; let inst = null;
   const content = { get scrollTop() { return scroller.scrollTop; }, get scrollHeight() { return scroller.scrollHeight; }, get clientHeight() { return window.innerHeight; }, get clientWidth() { return window.innerWidth; } };
 
+  /* ADAPTED: hold off the rasteriser (which hides tracked elements while it paints
+     them) until the controller's own ~1s intro gate has passed. During intro
+     rowTargetFor() returns 1 for every row, so nothing would animate anyway — but
+     without this, an element already on-screen at mount (the hero line) gets
+     `ps-hidden` for the one frame between mount and the first onRows(), a visible
+     flicker. Re-arms per mount, so an audience-toggle re-mount is also flicker-free. */
+  let armed = false;
+  const armTimer = setTimeout(() => { armed = true; }, 1200);
+
   let instance = null;
   try {
-    instance = createParticleScroll({ source, content, output, scrollTarget: window, paint: (src, ctx) => rasterise(tracked, src, ctx), onRows(rows, density) {
+    instance = createParticleScroll({ source, content, output, scrollTarget: window, paint: (src, ctx) => { if (armed) rasterise(tracked, src, ctx); }, onRows(rows, density) {
       const sy = scroller.scrollTop; let changed = false;
       for (const t of tracked) {
         const r = t.el.getBoundingClientRect(); const top = Math.max(0, Math.floor((r.top + sy) / density)), bottom = Math.min(rows.length - 1, Math.ceil((r.bottom + sy) / density));
@@ -409,17 +418,25 @@ export function mountParticleScroll(selectorList, options = {}) {
     console.warn('ParticleScroll: init failed, headings fall back to plain reveal.', e);
   }
   inst = instance;
-  if (!instance) { output.remove(); for (const t of tracked) t.el.classList.remove('ps-hidden', 'ps-in'); return null; }
-  // Each tracked block is one unit: every row it spans shares a single progress value, so the
-  // block dissolves and re-forms as a whole instead of being wiped by a hard horizontal edge.
+  if (!instance) { clearTimeout(armTimer); output.remove(); for (const t of tracked) t.el.classList.remove('ps-hidden', 'ps-in'); return null; }
+  // Upstream makes every tracked block one unit — all its rows share a single
+  // progress value so it dissolves and re-forms as a whole rather than being wiped
+  // by a hard horizontal edge. Right for a heading; for a multi-line paragraph it
+  // means the whole block hangs scattered at once, a big diffuse haze that reads
+  // poorly.
+  // ADAPTED: only short elements (<= ~2.5 lines) get a unit. Taller blocks fall
+  // through to the controller's own per-row targeting, so a paragraph resolves
+  // top-down as it crosses the band, which reads like text arriving.
+  const UNIT_MAX_HEIGHT = 96;
   const density = Math.max(1, options.density || DEFAULTS.density);
   const syncUnits = () => {
     const sy = scroller.scrollTop;
-    instance.setUnits(tracked.map(t => {
+    instance.setUnits(tracked.flatMap(t => {
       const r = t.el.getBoundingClientRect();
+      if (r.height > UNIT_MAX_HEIGHT) return [];
       const from = Math.max(0, Math.floor((r.top + sy) / density) - 1);
       const to = Math.max(from, Math.ceil((r.bottom + sy) / density) + 1);
-      return { from, to, anchor: r.top + sy + r.height * 0.62 };
+      return [{ from, to, anchor: r.top + sy + r.height * 0.62 }];
     }));
   };
   syncUnits();
@@ -432,6 +449,7 @@ export function mountParticleScroll(selectorList, options = {}) {
   return {
     repaint,
     destroy() {
+      clearTimeout(armTimer);
       instance.destroy();
       window.removeEventListener('resize', repaint);
       imgs.forEach(i => i.removeEventListener('load', repaint));
