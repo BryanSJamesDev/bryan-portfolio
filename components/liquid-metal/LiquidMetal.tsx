@@ -8,6 +8,9 @@
  * and torn down ~1.2 s after the pointer leaves. However many of these are on
  * the page, at most one or two hold a live context at a time.
  *
+ * - only mounts on `(hover: hover) and (pointer: fine)` — touch / coarse-pointer
+ *   devices always show the static pill, and never touch the shader path at all
+ *   (no context, no shimmer). Same gate topDockController uses.
  * - no WebGL2  -> the shader never mounts; hover shows the CSS shimmer instead.
  * - prefers-reduced-motion -> nothing mounts, ever; the static pill is the whole
  *   treatment.
@@ -30,20 +33,21 @@ const TUNE: Record<"explore" | "play", LiquidMetalTune> = {
   explore: { gain: 1.35, dim: 0.24, glow: 1.2, glowR: 1.05, punch: 1.3 },
   play: { gain: 1.55, dim: 0.4, glow: 1.4 },
 };
-const prefersReducedMotion = () =>
+/* mount the interactive shader only on a real hover-capable, fine pointer that
+   isn't asking for reduced motion — everything else gets the static pill. */
+const canMountShader = () =>
   typeof matchMedia === "function" &&
-  matchMedia("(prefers-reduced-motion: reduce)").matches;
+  matchMedia("(hover: hover) and (pointer: fine)").matches &&
+  !matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 type Want = {
   mode: "hover" | "focus";
   coords?: { x: number; y: number };
-  press?: boolean;
 };
 const apply = (h: LiquidMetalHandle, w: Want) => {
   if (w.mode === "hover") h.hover(true);
   else h.focus(true);
   if (w.coords) h.setPointer(w.coords.x, w.coords.y);
-  if (w.press) h.press(true);
 };
 
 type Base = {
@@ -77,7 +81,7 @@ export function LiquidMetal(props: LiquidMetalProps) {
   const arm = (want: Want) => {
     clearTimer();
     const slot = slotRef.current;
-    if (!slot || prefersReducedMotion()) return;
+    if (!slot || !canMountShader()) return;
     wantRef.current = want;
     if (handleRef.current) {
       apply(handleRef.current, want);
@@ -129,14 +133,8 @@ export function LiquidMetal(props: LiquidMetalProps) {
       arm({ mode: "hover", coords: { x: e.clientX, y: e.clientY } });
   };
   const onPointerLeave = (e: ReactPointerEvent) => {
+    // teardown only ever starts here, after the pointer has genuinely left
     if (e.pointerType === "mouse") disarm();
-  };
-  const onPointerDown = (e: ReactPointerEvent) => {
-    if (e.pointerType === "mouse") return;
-    // touch / pen: light it and ripple, then let it settle back on its own
-    arm({ mode: "hover", coords: { x: e.clientX, y: e.clientY }, press: true });
-    clearTimer();
-    timerRef.current = setTimeout(disarm, 2600);
   };
   const onFocus = (e: ReactFocusEvent) => {
     if ((e.target as HTMLElement).matches?.(":focus-visible"))
@@ -163,14 +161,14 @@ export function LiquidMetal(props: LiquidMetalProps) {
       data-liquid-metal={glVariant}
       onPointerEnter={onPointerEnter}
       onPointerLeave={onPointerLeave}
-      onPointerDown={onPointerDown}
       onFocusCapture={onFocus}
       onBlurCapture={disarm}
     >
       <span className="lm-plate" aria-hidden="true" />
-      <span className="lm-fxwrap" aria-hidden="true">
-        <canvas className="liquid-fx" aria-hidden="true" />
-      </span>
+      {/* the shader canvas is created fresh per mount and removed on teardown,
+          in liquidMetalRenderer.ts — a canvas is single-use once its context
+          is lost, so it must not be a persistent element */}
+      <span className="lm-fxwrap" aria-hidden="true" />
       {props.as === "button" ? (
         <button
           className={btnClass}

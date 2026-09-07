@@ -12,8 +12,16 @@
  * ADAPTED for lazy mount/unmount (the site runs the shader only while a control
  * is hovered or focused, at most one or two at a time):
  *  - no WebGL2 -> returns null; the caller shows the CSS shimmer fallback.
+ *  - a FRESH <canvas> is created per mount and destroy() deletes every GL
+ *    object, loses the context, zeroes the drawing buffer and removes the
+ *    canvas from the DOM. A canvas is single-use: once its context is lost it
+ *    is poisoned (getContext returns the lost context forever), so reusing one
+ *    persistent canvas leaked a dead context on every teardown until the
+ *    browser's ~16-context limit was hit and it started force-evicting live
+ *    ones — the white flashes + total failure in the bug report.
+ *  - a webglcontextlost handler stops the loop cleanly if the UA evicts us.
  *  - every addEventListener and the ResizeObserver are undone by destroy(), the
- *    rAF loop stops, and the GL context is explicitly lost.
+ *    rAF loop stops.
  *  - returns handle methods (see below) instead of stashing hooks on a window.
  *  - the shim maps "stage" to the oversized canvas box so the bloom has room,
  *    and hot/press classes land on the layout slot.
@@ -47,12 +55,21 @@ export function mountLiquidMetal(
     el.addEventListener(ev, fn, opts);
     cleanups.push(() => el.removeEventListener(ev, fn, opts));
   };
+  const fxwrap = slot.querySelector(".lm-fxwrap") as HTMLElement | null;
+  const btnEl = slot.querySelector(".liquid-button") as HTMLElement | null;
+  if (!fxwrap || !btnEl) return null;
+  // a fresh, single-use canvas per mount — see the header note
+  const freshCanvas = hostWindow.document.createElement("canvas");
+  freshCanvas.className = "liquid-fx";
+  freshCanvas.setAttribute("aria-hidden", "true");
+  fxwrap.replaceChildren(freshCanvas);
+  cleanups.push(() => freshCanvas.remove());
   const document = {
     body: slot,
     getElementById(id: string) {
-      if (id === "stage") return slot.querySelector(".lm-fxwrap");
-      if (id === "fx") return slot.querySelector(".liquid-fx");
-      if (id === "btn") return slot.querySelector(".liquid-button");
+      if (id === "stage") return fxwrap;
+      if (id === "fx") return freshCanvas;
+      if (id === "btn") return btnEl;
       return null;
     },
     querySelector(sel: string) { return slot.querySelector(sel); },
@@ -436,6 +453,10 @@ const gl = cv.getContext('webgl2', {alpha:true, antialias:false, premultipliedAl
 const stage = document.getElementById('stage');
 const btn   = document.getElementById('btn');
 const plate = document.querySelector('.plate');
+
+/* If the UA evicts our context (e.g. another canvas elsewhere blew the limit),
+   stop the loop rather than spamming GL errors and painting garbage. */
+L(cv, 'webglcontextlost', (e: Event) => { e.preventDefault(); dead = true; cancelAnimationFrame(raf); });
 
 // the metal field — uP[0..20]
 const P = {
@@ -855,12 +876,24 @@ raf = requestAnimationFrame(frame);
 // tiny console hooks for tuning
 
   const destroy = () => {
-    if (dead) return;
     dead = true;
     cancelAnimationFrame(raf);
     for (const c of cleanups) c();
+    cleanups.length = 0;
     slot.classList.remove("hot", "press");
-    try { gl.getExtension("WEBGL_lose_context")?.loseContext(); } catch {}
+    /* delete every GL object, then hard-lose the context, then zero the drawing
+       buffer — so nothing keeps the context alive and it does not count against
+       the browser's per-page limit. The canvas itself is removed via cleanups. */
+    try {
+      if (!gl.isContextLost()) {
+        for (const p of [pScene, pRim, pDown, pBlur, pComp]) gl.deleteProgram(p.p);
+        for (const t of [T_core, T_rim, T_s1, T_s2, T_a, T_b]) { gl.deleteTexture(t.tex); gl.deleteFramebuffer(t.fbo); }
+        gl.deleteBuffer(vbo);
+        gl.deleteVertexArray(vao);
+      }
+      gl.getExtension("WEBGL_lose_context")?.loseContext();
+      cv.width = 0; cv.height = 0;
+    } catch {}
   };
   return {
     destroy,
