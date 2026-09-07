@@ -2,8 +2,15 @@
 @config "../tailwind.config.ts";
 @custom-variant dark (&:is([data-theme="dark"] *));
 :root{--background:#fafafa;--foreground:#18191b;--muted:#f0f1f2;--muted-foreground:#60646c;--border:#d8dadd;--accent:#2454b8;--primary:#2454b8;--primary-foreground:#fff;--input:#bfc3ca;--ring:#2454b8;--panel:#fff;--radius:0px;--rail-gold:#8a6410;--glow-gold:#ff9d24;color-scheme:light}
-[data-theme=dark]{--background:#121315;--foreground:#f2f3f5;--muted:#202226;--muted-foreground:#a7abb4;--border:#383b41;--accent:#92b6ff;--primary:#92b6ff;--primary-foreground:#121315;--input:#5a606b;--ring:#92b6ff;--panel:#181a1d;--rail-gold:#e3bb52;color-scheme:dark}
-@media(prefers-color-scheme:dark){:root:not([data-theme=light]){--background:#121315;--foreground:#f2f3f5;--muted:#202226;--muted-foreground:#a7abb4;--border:#383b41;--accent:#92b6ff;--primary:#92b6ff;--primary-foreground:#121315;--input:#5a606b;--ring:#92b6ff;--panel:#181a1d;--rail-gold:#e3bb52;color-scheme:dark}}
+/* --background is the exact muted grey-olive the Sylva "Living Green" hero
+   (inner-green-3d.html, SHA-256 69c3694b…) puts corner-to-corner behind its 3D
+   scene — its .hero base fill, and the value its own source annotates as what
+   "the reference screen reads a near-flat #4a4d44 corner to corner". The rest of
+   the dark ramp is nudged off its old near-black tuning so borders stay visible
+   and secondary text keeps AA against the lighter ground; the palette is not
+   otherwise redesigned. */
+[data-theme=dark]{--background:#4a4d44;--foreground:#f2f3f5;--muted:#4d5046;--muted-foreground:#c7cabd;--border:#7c8070;--accent:#a7c6ff;--primary:#a7c6ff;--primary-foreground:#121315;--input:#868a79;--ring:#a7c6ff;--panel:#575a4f;--rail-gold:#e3bb52;color-scheme:dark}
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]){--background:#4a4d44;--foreground:#f2f3f5;--muted:#4d5046;--muted-foreground:#c7cabd;--border:#7c8070;--accent:#a7c6ff;--primary:#a7c6ff;--primary-foreground:#121315;--input:#868a79;--ring:#a7c6ff;--panel:#575a4f;--rail-gold:#e3bb52;color-scheme:dark}}
 @theme inline{--color-background:var(--background);--color-foreground:var(--foreground);--color-muted:var(--muted);--color-muted-foreground:var(--muted-foreground);--color-border:var(--border);--color-primary:var(--primary);--color-primary-foreground:var(--primary-foreground);--color-input:var(--input);--color-ring:var(--ring)}
 *{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:110px}body{margin:0;background:var(--background);color:var(--foreground);font-family:var(--font-sans),Arial,sans-serif;font-size:16px;line-height:1.65}::selection{background:var(--accent);color:var(--background)}a{color:inherit;text-decoration:none;text-underline-offset:5px}a:hover{text-decoration:underline;color:var(--accent)}button,input{font:inherit}button{cursor:pointer}button:disabled{cursor:default}button,a,input,[role=radio],[role=switch]{transition:border-color .18s ease,color .18s ease,background .18s ease}button:focus-visible,a:focus-visible,input:focus-visible,[role=radio]:focus-visible,[role=switch]:focus-visible{outline:2px solid var(--accent);outline-offset:5px}p,h1,h2,h3,ul{margin:0}button{border:0;background:transparent;color:inherit}svg{flex-shrink:0}main{max-width:1100px;margin:auto;padding:0 42px}.mono,.eyebrow,.tag,.tags,.project h3,.project-number,.demo-heading,.terminal,.footer-end,.sticky-nav,.terminal-tab,.audience{font-family:var(--font-mono),monospace}.small{font-size:14px}.accent{color:var(--accent)}.hex{display:inline-block;width:9px;height:10px;background:var(--accent);clip-path:polygon(25% 0%,75% 0%,100% 50%,75% 100%,25% 100%,0% 50%);flex-shrink:0}
 .hero{padding-top:86px;max-width:880px;margin:auto;position:relative}
@@ -74,6 +81,13 @@
    particle overlay sits above page content but below this site's fixed nav and
    utilities. Applied to section h2s + project h3s only (see components/portfolio.tsx). */
 #ps-output{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:15}
+
+/* ── cursor dust — ambient motes off the pointer (adapted from Sylva's cursor
+   spray; components/cursor-dust). Canvas 2D, not WebGL: no persistent GPU
+   context. Sits at z-index 0 behind the reading content, which main lifts above. */
+.cursor-dust{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:0}
+main{position:relative;z-index:1}
+@media (prefers-reduced-motion:reduce){.cursor-dust{display:none}}
 .ps-hidden{visibility:hidden}
 /* once ParticleScroll has resolved an element, it owns the final state: neutralise
    any .reveal.pending (opacity:0 / translate) still on it from a fast scroll-in.
