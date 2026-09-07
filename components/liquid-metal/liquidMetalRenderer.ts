@@ -1,136 +1,67 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Liquid Metal Button</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,100..900&display=swap" rel="stylesheet">
-<style>
-  *{box-sizing:border-box;margin:0;padding:0}
-  html,body{height:100%}
-  body{
-    /* A shadow needs something to fall on: a soft ambient pool lifts the
-       ground just off black so the button reads as sitting above it. */
-    background:
-      radial-gradient(46vmax 32vmax at 50% 47%,
-        #191b21 0%, #0e0f13 34%, #050506 62%, #000 88%) #000;
-    display:grid;place-items:center;
-    overflow:hidden;
-    font-family:"Inter",-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-serif;
-    font-optical-sizing:auto;
-    -webkit-font-smoothing:antialiased;
-  }
+/* Liquid-metal control renderer.
+ *
+ * Vendored from ThreeUI's Sylva "Living Green" hero,
+ * public/landing-pages/inner-green-3d.html rev 05f359ce157a
+ * (canonical HTML SHA-256 69c3694bd63f44ef9f007ebe4dac57a83e4402e0cdf6b54dd10b96dd4f05e197):
+ * the in-document `mountLiquidMetal` renderer. Five-pass WebGL2 dispersion
+ * shader, NOT Three.js (Three drives only the moss scene, which is unused here).
+ *
+ * VERBATIM from source: the shader programs, the P/E/C/R constant blocks,
+ * resize(), frame() and its idle-cap, and the hover/press/focus model.
+ *
+ * ADAPTED for lazy mount/unmount (the site runs the shader only while a control
+ * is hovered or focused, at most one or two at a time):
+ *  - no WebGL2 -> returns null; the caller shows the CSS shimmer fallback.
+ *  - every addEventListener and the ResizeObserver are undone by destroy(), the
+ *    rAF loop stops, and the GL context is explicitly lost.
+ *  - returns handle methods (see below) instead of stashing hooks on a window.
+ *  - the shim maps "stage" to the oversized canvas box so the bloom has room,
+ *    and hot/press classes land on the layout slot.
+ */
+/* eslint-disable */
+// @ts-nocheck
 
-  /* Everything is expressed in the reference's own units (the pill measured
-     1407 x 516 there), scaled off one ergonomic knob: the button height. */
-  .stage{
-    --h: 52px;                            /* a normal control height */
-    --u: calc(var(--h) / 516);
-    --bw: calc(1407 * var(--u));
-    --bh: var(--h);
-    /* The canvas is the stage, so this has to clear the bloom's full reach
-       (~4 sigma) or the halo gets cut off against a visible rectangle. */
-    --pad: calc(900 * var(--u));
-    position:relative;
-    width:calc(var(--bw) + 2 * var(--pad));
-    height:calc(var(--bh) + 2 * var(--pad));
-    display:grid;place-items:center;
-    touch-action:manipulation;
-  }
+export type LiquidMetalHandle = {
+  destroy: () => void;
+  hover: (v: boolean) => void;
+  focus: (v: boolean) => void;
+  press: (v: boolean) => void;
+  setPointer: (clientX: number, clientY: number) => void;
+};
 
-  /* the button's own solid body, and the shadow it casts on the pool */
-  .plate{
-    position:absolute;
-    width:var(--bw);height:var(--bh);
-    border-radius:999px;
-    background:#0b0c0e;
-    box-shadow:
-      0 calc(var(--h) * 0.10) calc(var(--h) * 0.22) rgba(0,0,0,.72),
-      0 calc(var(--h) * 0.30) calc(var(--h) * 0.66) rgba(0,0,0,.62),
-      0 calc(var(--h) * 0.62) calc(var(--h) * 1.30) rgba(0,0,0,.42);
-    transition:box-shadow .38s cubic-bezier(.22,.61,.36,1),
-               background .38s cubic-bezier(.22,.61,.36,1);
-  }
-  body.gl-fallback .plate{
-    background:linear-gradient(120deg,#3a3f47,#0b0c0e 30%,#0b0c0e 70%,#4a5058);
-    background-size:300% 300%;
-    animation:gl-fallback-shimmer 3.2s ease-in-out infinite;
-  }
-  @keyframes gl-fallback-shimmer{
-    0%{background-position:0% 50%}
-    50%{background-position:100% 50%}
-    100%{background-position:0% 50%}
-  }
-  @media(prefers-reduced-motion:reduce){
-    body.gl-fallback .plate{animation:none}
-  }
-  /* deepen it while the metal is lit, so the bright face keeps its edge */
-  body.hot .plate{
-    background:#08090a;
-    box-shadow:
-      0 calc(var(--h) * 0.12) calc(var(--h) * 0.26) rgba(0,0,0,.80),
-      0 calc(var(--h) * 0.40) calc(var(--h) * 0.86) rgba(0,0,0,.72),
-      0 calc(var(--h) * 0.86) calc(var(--h) * 1.80) rgba(0,0,0,.55);
-  }
+/* ADAPTED: `tune` scales the authored P.gain / P.dim / C.glow* down for the
+   small link pills — at ~44px the reference's full brightness blows out the
+   label. Defaults leave every authored value exactly as shipped. */
+export type LiquidMetalTune = Partial<{ gain: number; dim: number; glow: number; glowR: number; punch: number }>;
 
-  #fx{position:absolute;inset:0;width:100%;height:100%;display:block}
+export function mountLiquidMetal(
+  slot: HTMLElement,
+  variant: "explore" | "play" = "explore",
+  tune: LiquidMetalTune = {},
+): LiquidMetalHandle | null {
+  const hostWindow = globalThis as any;
+  const cleanups: Array<() => void> = [];
+  let dead = false;
+  let raf = 0;
+  const L = (el: any, ev: string, fn: any, opts?: any) => {
+    el.addEventListener(ev, fn, opts);
+    cleanups.push(() => el.removeEventListener(ev, fn, opts));
+  };
+  const document = {
+    body: slot,
+    getElementById(id: string) {
+      if (id === "stage") return slot.querySelector(".lm-fxwrap");
+      if (id === "fx") return slot.querySelector(".liquid-fx");
+      if (id === "btn") return slot.querySelector(".liquid-button");
+      return null;
+    },
+    querySelector(sel: string) { return slot.querySelector(sel); },
+  } as any;
+  const window = {
+    get devicePixelRatio() { return hostWindow.devicePixelRatio; },
+  } as any;
+  const host = hostWindow; // the real window, for pointermove / pointerup / pointercancel
 
-  .btn{
-    position:relative;
-    width:var(--bw);height:var(--bh);
-    border:0;background:none;padding:0;
-    border-radius:999px;
-    display:flex;align-items:center;justify-content:center;
-    gap:calc(88 * var(--u));
-    color:#fff;
-    font-family:inherit;
-    font-weight:500;
-    font-size:calc(207 * var(--u));
-    line-height:1;
-    letter-spacing:0;
-    cursor:pointer;
-    -webkit-tap-highlight-color:transparent;
-    outline:none;
-  }
-  .btn:focus-visible{outline:calc(4 * var(--u)) solid rgba(255,255,255,.55);outline-offset:calc(10 * var(--u))}
-  .btn .ico{
-    width:calc(115 * var(--u));height:calc(115 * var(--u));
-    display:block;flex:none;overflow:visible;
-  }
-  /* descenders pull the flex box up — nudge back so the cap box, not the
-     em box, is what sits centred on the pill (measured, not guessed) */
-  .btn .lbl{display:block;transform:translateY(calc(2 * var(--u)))}
-
-  /* pressed: the button settles onto the surface, so the shadow tightens */
-  body.press .plate{
-    background:#070809;
-    box-shadow:
-      0 calc(var(--h) * 0.05) calc(var(--h) * 0.13) rgba(0,0,0,.82),
-      0 calc(var(--h) * 0.16) calc(var(--h) * 0.40) rgba(0,0,0,.70),
-      0 calc(var(--h) * 0.34) calc(var(--h) * 0.80) rgba(0,0,0,.50);
-    transition-duration:.10s;
-  }
-</style>
-</head>
-<body>
-<div class="stage" id="stage">
-  <div class="plate" aria-hidden="true"></div>
-  <canvas id="fx"></canvas>
-
-  <button class="btn" id="btn" type="button">
-    <svg class="ico" viewBox="0 0 115 115" aria-hidden="true">
-      <g stroke="currentColor" stroke-width="17" stroke-linecap="round">
-        <path d="M57.5 8.5 V106.5"/>
-        <path d="M8.5 57.5 H106.5"/>
-      </g>
-    </svg>
-    <span class="lbl">Sign up</span>
-  </button>
-</div>
-
-<script>
 /* =====================================================================
    Liquid metal — a dispersion shader.
 
@@ -498,21 +429,16 @@ void main(){
   o = vec4(min(rgb, vec3(1.)), a);
 }`;
 
+
 /* --------------------------------------------------------------- */
 const cv = document.getElementById('fx');
 const gl = cv.getContext('webgl2', {alpha:true, antialias:false, premultipliedAlpha:true, powerPreference:'high-performance'});
-if(!gl){
-  document.body.classList.add('gl-fallback');
-  window.__P = window.__E = window.__C = window.__R = {};
-  window.__set = window.__hover = window.__press = window.__ripple = window.__seek = () => {};
-  throw new Error('liquid-metal-button: WebGL2 unavailable, using CSS fallback');
-}
 const stage = document.getElementById('stage');
 const btn   = document.getElementById('btn');
 const plate = document.querySelector('.plate');
 
 // the metal field — uP[0..20]
-const P = window.__P = {
+const P = {
   valFreq:   0.50,   // 0  x-frequency of the valley curve
   valAmp:    0.55,   // 1  valley depth, in button heights (bounded so the
                      //    ribbon can never drift entirely off the pill)
@@ -542,7 +468,7 @@ const P = window.__P = {
 const PKEYS = Object.keys(P);
 
 // the animated rim — uE[0..5]
-const E = window.__E = {
+const E = {
   base:   0.20,      // 0 floor brightness, so the whole outline stays drawn
   hot:    0.82,      // 1 gain on the travelling highlights
   chromA: 0.42,      // 2 chromatic offset across the stroke, device px
@@ -555,9 +481,9 @@ const E = window.__E = {
 const EKEYS = Object.keys(E);
 
 // composite / JS-side only
-const C = window.__C = {
-  glow:   1.95,      // outer-glow gain
-  glowR:  1.30,      // outer-glow radius
+const C = {
+  glow:   variant === 'play' ? 1.28 : 1.95,      // outer-glow gain
+  glowR:  variant === 'play' ? 0.94 : 1.30,      // outer-glow radius
   glowIn: 0.30,      // how much bloom is allowed back inside the pill
   occl:   0.62,      // how much the drop shadow eats the bloom beneath it
   soften: 0.24,      // blur on the metal, in button heights — the "molten" knob
@@ -565,7 +491,7 @@ const C = window.__C = {
 };
 
 // disturbances — all distances in button heights, times in seconds
-const R = window.__R = {
+const R = {
   // press ripple
   speed:  1.85,      // how fast the ring expands
   width:  0.20,      // ring thickness
@@ -584,9 +510,15 @@ const R = window.__R = {
   ptrVref: 4.5       // cursor speed, in button heights/sec, that counts as "fast"
 };
 
-if(!gl){
-  document.body.innerHTML = '<p style="color:#888;font:14px system-ui">WebGL2 is required for this page.</p>';
-} else {
+
+if (!gl) { for (const c of cleanups) c(); return null; }
+
+if (tune.gain != null) P.gain = tune.gain;
+if (tune.dim != null) P.dim = tune.dim;
+if (tune.glow != null) C.glow = tune.glow;
+if (tune.glowR != null) C.glowR = tune.glowR;
+if (tune.punch != null) C.punch = tune.punch;
+
 
 function sh(type, src){
   const s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s);
@@ -663,7 +595,7 @@ function resize(){
   sizeTarget(T_a, dw, dh); sizeTarget(T_b, dw, dh);
   needResize = false;
 }
-new ResizeObserver(() => { needResize = true; }).observe(stage);
+const _ro = new ResizeObserver(() => { needResize = true; }); _ro.observe(stage); cleanups.push(() => _ro.disconnect());
 
 function drawTo(t){
   gl.bindFramebuffer(gl.FRAMEBUFFER, t ? t.fbo : null);
@@ -699,7 +631,22 @@ function localPt(e){
 const calm = matchMedia('(prefers-reduced-motion: reduce)');
 let drawn = null;                  // signature of the last frame actually drawn
 
+/* HOST ADAPTATION — idle frame cap.
+   The authored scene owns its page and can afford to run all twenty passes
+   every frame forever, because the rim keeps travelling even at rest. Here
+   two of these sit on top of a hero that is already rendering 190k blades of
+   moss, and measured together they were halving the whole page: 50 fps with
+   them, 92 without.
+   Nothing is removed — the cap only applies while the button is genuinely
+   idle, and the rim's travel is 0.07 laps a second, so 30 Hz is far more than
+   it needs. The moment a pointer, a press, a focus or a ripple is in play it
+   goes back to running every frame, because that is when the metal has to
+   track the cursor. */
+const IDLE_HZ = 30;
+let lastDraw = 0;
+
 function frame(now){
+  if(dead) return;
   const dtRaw = (now - last) / 1000; last = now;
   const dt = Math.min(dtRaw, 1/20);
   if(!calm.matches) clock += dt;
@@ -737,8 +684,13 @@ function frame(now){
   // reduced motion with nothing in flight.
   const sig = (calm.matches && !ripLive && ptrAmt < 0.002)
     ? `${hover}|${press}|${W}|${H}` : null;
-  if(sig !== null && sig === drawn){ requestAnimationFrame(frame); return; }
+  if(sig !== null && sig === drawn){ raf = requestAnimationFrame(frame); return; }
   drawn = sig;
+
+  const idle = !on.over && !on.press && !on.focus && !ripLive
+            && hover < 0.002 && press < 0.002 && ptrAmt < 0.002;
+  if(idle && now - lastDraw < 1000 / IDLE_HZ){ raf = requestAnimationFrame(frame); return; }
+  lastDraw = now;
 
   for(let i = 0; i < uArr.length; i++) uArr[i] = P[PKEYS[i]];
   for(let i = 0; i < eArr.length; i++) eArr[i] = E[EKEYS[i]];
@@ -842,8 +794,9 @@ function frame(now){
   gl.uniform1f(pComp.u.uPunch, C.punch);
   drawTo(null);
 
-  requestAnimationFrame(frame);
+  raf = requestAnimationFrame(frame);
 }
+
 
 /* ---------------- interaction ----------------
    Hover, press and focus all light the metal; press additionally throws a
@@ -856,59 +809,67 @@ const sync = () => {
   document.body.classList.toggle('press', on.press);
 };
 
-btn.addEventListener('pointerenter', e => {
+L(btn, 'pointerenter', e => {
   if(e.pointerType !== 'mouse') return;
   // land the well where the cursor actually entered, not where it last was
   [ptr.x, ptr.y] = localPt(e);
   ptrS.x = ptr.x; ptrS.y = ptr.y; ptrSpeed = 0;
   on.over = true; sync();
 });
-btn.addEventListener('pointerleave', e => { if(e.pointerType === 'mouse'){ on.over = false; sync(); } });
+L(btn, 'pointerleave', e => { if(e.pointerType === 'mouse'){ on.over = false; sync(); } });
 
 // the cursor drags the metal; tracked on the window so a press can slide off
 // the button, but only measured while the button is actually engaged
-window.addEventListener('pointermove', e => {
+L(host, 'pointermove', e => {
   if(!on.over && !on.press) return;
   [ptr.x, ptr.y] = localPt(e);
 }, {passive:true});
 
-btn.addEventListener('pointerdown', e => {
+L(btn, 'pointerdown', e => {
   [ptr.x, ptr.y] = localPt(e);
   on.press = true; sync();
   addRipple(ptr.x, ptr.y);
 });
-window.addEventListener('pointerup',     () => { on.press = false; sync(); });
-window.addEventListener('pointercancel', () => { on.press = false; sync(); });
+L(host, 'pointerup',     () => { on.press = false; sync(); });
+L(host, 'pointercancel', () => { on.press = false; sync(); });
 // only keyboard focus keeps it lit — a mouse click shouldn't leave the button
 // glowing after the pointer has moved away
-btn.addEventListener('focus', () => {
+L(btn, 'focus', () => {
   on.focus = btn.matches(':focus-visible'); sync();
 });
-btn.addEventListener('blur', () => { on.focus = false; sync(); });
+L(btn, 'blur', () => { on.focus = false; sync(); });
 
 // keyboard activation gets the same treatment, rippling from the centre
-btn.addEventListener('keydown', e => {
+L(btn, 'keydown', e => {
   if(e.key !== 'Enter' && e.key !== ' ' || e.repeat) return;
   on.press = true; sync(); addRipple(0, 0);
 });
-btn.addEventListener('keyup', e => {
+L(btn, 'keyup', e => {
   if(e.key !== 'Enter' && e.key !== ' ') return;
   on.press = false; sync();
 });
 
 resize();
-requestAnimationFrame(frame);
+raf = requestAnimationFrame(frame);
 
 // tiny console hooks for tuning
-window.__set = (o = {}, e = {}, c = {}, r = {}) => {
-  Object.assign(P, o); Object.assign(E, e); Object.assign(C, c); Object.assign(R, r);
-  drawn = null;
-};
-window.__hover  = v => { on.over = !!v; sync(); };
-window.__press  = v => { on.press = !!v; sync(); if(v) addRipple(0, 0); };
-window.__ripple = (x = 0, y = 0) => addRipple(x, y);
-window.__seek   = v => { clock = v; drawn = null; };
+
+  const destroy = () => {
+    if (dead) return;
+    dead = true;
+    cancelAnimationFrame(raf);
+    for (const c of cleanups) c();
+    slot.classList.remove("hot", "press");
+    try { gl.getExtension("WEBGL_lose_context")?.loseContext(); } catch {}
+  };
+  return {
+    destroy,
+    hover: (v: boolean) => { on.over = !!v; sync(); },
+    focus: (v: boolean) => { on.focus = !!v; sync(); },
+    press: (v: boolean) => { on.press = !!v; sync(); if (v) addRipple(0, 0); },
+    setPointer: (clientX: number, clientY: number) => {
+      const [x, y] = localPt({ clientX, clientY } as any);
+      ptr.x = x; ptr.y = y; ptrS.x = x; ptrS.y = y; ptrSpeed = 0;
+    },
+  };
 }
-</script>
-</body>
-</html>
