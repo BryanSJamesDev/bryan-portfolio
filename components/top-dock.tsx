@@ -4,20 +4,21 @@
 
    The authored component (components/animated-top-dock/AnimatedTopDock.tsx) is
    vendored verbatim and renders a fixed demo item set with internal state. This
-   site needs the dock wired to its own four sections with real anchor
-   navigation and the page's existing scroll-spy `active` state, so the dock is
-   composed here directly from the two pieces that carry the authored behaviour:
+   site needs the dock wired to its own sections with real anchor navigation and
+   the page's existing scroll-spy `active` state, so the dock is composed here
+   directly from the two pieces that carry the authored behaviour:
 
      - createTopDockController — the exact spring/proximity engine, unmodified.
-     - the `.animated-top-dock__*` DOM + CSS contract, reproduced structurally.
+     - the `.animated-top-dock__*` DOM contract, reproduced structurally.
 
-   Everything a visitor sees and feels (the capsule, the downward spring, the
-   proximity widening, focus/keyboard handling, reduced-motion → static, the
-   coarse-pointer / narrow-viewport opt-out) is the controller's, byte-for-byte.
+   The controller still owns everything a visitor feels: the proximity widening,
+   focus/keyboard handling, reduced-motion → static, the coarse-pointer /
+   narrow-viewport opt-out.
 
-   Navigation must never depend on the dock: if the controller throws, or the
-   subtree throws while rendering, this falls back to the plain `.sticky-nav`
-   markup this file replaced — plain text links, no animation. */
+   The dock is always mounted and always fixed at the top — there is no
+   scroll gate. Navigation must never depend on it: if the controller throws, or
+   the subtree throws while rendering, this falls back to the plain `.sticky-nav`
+   markup — plain text links, no animation. */
 import {
   Component,
   useEffect,
@@ -38,6 +39,7 @@ const DOCK_OPTIONS = {
 } as const;
 
 export type TopDockItem = { id: string; label: string };
+export type TopDockCta = { label: string; href: string; external?: boolean };
 
 /* icons are the sable ITEMS glyphs from AnimatedTopDock.tsx, kept on the same
    0 0 16 16 grid; decorative only (aria-hidden, hidden under 600px) */
@@ -70,39 +72,47 @@ const ICONS: Record<string, ReactNode> = {
   ),
 };
 
-const BRAND_MARK = (
-  <svg viewBox="0 0 24 24" aria-hidden="true">
-    <rect width="24" height="24" fill="#e8e8e3" />
-    <text
-      x="12"
-      y="16.5"
-      textAnchor="middle"
-      fill="#111"
-      fontFamily="var(--font-mono), monospace"
-      fontSize="12"
-      fontWeight="600"
-    >
-      bj
-    </text>
+const EXT_ARROW = (
+  <svg viewBox="0 0 12 12" aria-hidden="true">
+    <path
+      d="M3.2 8.8 8.8 3.2M4.4 3.2h4.4v4.4"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.4"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
   </svg>
 );
+
+function CtaLink({ cta }: { cta: TopDockCta }) {
+  return (
+    <a
+      className="animated-top-dock__cta"
+      href={cta.href}
+      aria-label={cta.label}
+      {...(cta.external
+        ? { target: "_blank", rel: "noopener noreferrer" }
+        : null)}
+    >
+      <span>{cta.label}</span>
+      {cta.external ? EXT_ARROW : null}
+    </a>
+  );
+}
 
 function PlainNav({
   items,
   activeId,
-  shown,
+  cta,
 }: {
   items: readonly TopDockItem[];
   activeId: string;
-  shown: boolean;
+  cta?: TopDockCta;
 }) {
-  /* the exact markup this component replaced */
+  /* the plain-text fallback — always shown, since the dock has no scroll gate */
   return (
-    <nav
-      aria-label="Main navigation"
-      className={`sticky-nav ${shown ? "shown" : ""}`}
-      inert={!shown}
-    >
+    <nav aria-label="Main navigation" className="sticky-nav shown">
       <a href="#hero" className="nav-brand">
         bj<span className="accent">.</span>
       </a>
@@ -116,6 +126,16 @@ function PlainNav({
             {item.label}
           </a>
         ))}
+        {cta ? (
+          <a
+            href={cta.href}
+            {...(cta.external
+              ? { target: "_blank", rel: "noopener noreferrer" }
+              : null)}
+          >
+            {cta.label}
+          </a>
+        ) : null}
       </div>
     </nav>
   );
@@ -124,10 +144,12 @@ function PlainNav({
 function DockNav({
   items,
   activeId,
+  cta,
   onFail,
 }: {
   items: readonly TopDockItem[];
   activeId: string;
+  cta?: TopDockCta;
   onFail: () => void;
 }) {
   const navRef = useRef<HTMLElement>(null);
@@ -169,11 +191,10 @@ function DockNav({
       >
         <a
           className="animated-top-dock__item animated-top-dock__logo"
-          data-dock-item
           href="#hero"
           aria-label="Bryan James — back to top"
         >
-          {BRAND_MARK}
+          <span className="hex" aria-hidden="true" />
         </a>
         {items.map((item) => (
           <a
@@ -189,6 +210,7 @@ function DockNav({
             <span>{item.label}</span>
           </a>
         ))}
+        {cta ? <CtaLink cta={cta} /> : null}
       </nav>
     </div>
   );
@@ -213,17 +235,17 @@ class DockBoundary extends Component<
 export function TopDock({
   items,
   activeId,
-  shown,
+  cta,
 }: {
   items: readonly TopDockItem[];
   activeId: string;
-  shown: boolean;
+  cta?: TopDockCta;
 }) {
   const [failed, setFailed] = useState(false);
-  const fallback = <PlainNav items={items} activeId={activeId} shown={shown} />;
+  const fallback = <PlainNav items={items} activeId={activeId} cta={cta} />;
 
   return (
-    <div className={`top-dock-shell ${shown ? "shown" : ""}`} inert={!shown}>
+    <div className="top-dock-shell">
       {failed ? (
         fallback
       ) : (
@@ -231,6 +253,7 @@ export function TopDock({
           <DockNav
             items={items}
             activeId={activeId}
+            cta={cta}
             onFail={() => setFailed(true)}
           />
         </DockBoundary>
