@@ -55,3 +55,11 @@
  .top-dock-shell .animated-top-dock__nav{left:10px;right:100px;transform:none;justify-content:space-between}}
 @media(prefers-reduced-motion:reduce){.animated-top-dock__item{transform:none!important}}
 
+/* ── sublevel.studio ParticleScroll — heading grain-resolve (source rev 91db5c1) ──
+   Verbatim from the canonical HTML except #ps-output z-index: 850 -> 15, so the
+   particle overlay sits above page content but below this site's fixed nav and
+   utilities. Applied to section h2s + project h3s only (see components/portfolio.tsx). */
+#ps-output{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:15}
+.ps-hidden{visibility:hidden}
+@media (prefers-reduced-motion:reduce){.ps-hidden{visibility:visible}}
+
