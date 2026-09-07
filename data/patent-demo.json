@@ -1,0 +1,52 @@
+[
+  {
+    "id": "P01",
+    "title": "Battery thermal management",
+    "text": "A battery system comprising a temperature sensor and a cooling controller configured to regulate coolant flow based on cell temperature."
+  },
+  {
+    "id": "P02",
+    "title": "Robot grasp planning",
+    "text": "A robotic arm comprising a camera and a processor configured to detect an object and determine a grasp position from an image."
+  },
+  {
+    "id": "P03",
+    "title": "Semantic document retrieval",
+    "text": "A search system that encodes a query and document claims into vector representations and ranks documents according to vector similarity."
+  },
+  {
+    "id": "P04",
+    "title": "Network anomaly detection",
+    "text": "A network monitoring system that detects anomalous packet traffic using a trained machine learning classifier."
+  },
+  {
+    "id": "P05",
+    "title": "Data schema validation",
+    "text": "A data ingestion system configured to validate record field types against a schema and quarantine incompatible records before storage."
+  },
+  {
+    "id": "P06",
+    "title": "Solar power forecasting",
+    "text": "A method of forecasting solar energy output based on historical power measurements and weather observations."
+  },
+  {
+    "id": "P07",
+    "title": "Image-based disease detection",
+    "text": "An image processing system using a neural network to classify medical images and identify regions associated with disease."
+  },
+  {
+    "id": "P08",
+    "title": "Secure payment processing",
+    "text": "A transaction system that tokenizes payment credentials and verifies authorization before completing a purchase."
+  },
+  {
+    "id": "P09",
+    "title": "Vehicle route planning",
+    "text": "An autonomous vehicle controller that computes a route using obstacle positions derived from camera images and range sensors."
+  },
+  {
+    "id": "P10",
+    "title": "Inventory demand forecasting",
+    "text": "A method of predicting inventory demand from historical orders and time series sales data."
+  }
+]
