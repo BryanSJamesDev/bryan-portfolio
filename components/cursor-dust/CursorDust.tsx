@@ -3,37 +3,64 @@
  *
  * Adapted from the "cursor spray" in ThreeUI's Sylva "Living Green" hero
  * (public/landing-pages/inner-green-3d.html, rev 05f359ce157a, canonical
- * SHA-256 69c3694b…). In the source it is `buildCursorSpray()` / `emitSpray()`:
- * a THREE.Points system (~620 particles) whose flight is integrated in a GLSL
- * vertex shader and additively blended into the WebGL scene, emitting grains by
- * DISTANCE along the segment the pointer covered since the last frame.
+ * SHA-256 69c3694b…) — `buildCursorSpray()` / `emitSpray()` / `spawnSpray()`.
+ * In the source it is a THREE.Points system whose flight is integrated in a
+ * GLSL vertex shader and additively blended into the WebGL scene, emitting
+ * grains by DISTANCE along the segment the pointer covered since the last frame.
  *
- * This project already runs three persistent WebGL contexts (the heading
- * grain-reveal, the pill liquid-metal shader, the scroll particle field), so a
- * fourth GPU context left running for cursor dust is exactly what to avoid.
- * This port keeps the authored BEHAVIOUR — distance-based emission, per-grain
- * origin/velocity/birth, drag + slow lift + wander, the soft radial sprite, the
- * fade envelope — on a plain Canvas 2D surface with a small fixed pool. The rAF
- * loop only runs while grains are alive or the pointer has just moved; when the
- * page is still it stops entirely, so at rest this costs nothing.
+ * This project already runs three persistent WebGL contexts (heading grain-
+ * reveal, liquid-metal pills, scroll particle field), so a fourth GPU context
+ * idling for cursor dust is what to avoid. This is a Canvas 2D port that keeps
+ * the authored numbers, not just the behaviour — every constant below is traced
+ * to its line in the source and, where the source works in world units, scaled
+ * to screen pixels by the one factor the projection applies (see WU / RADIUS_K).
+ * The rAF loop runs only while grains are alive or the pointer just moved; at
+ * rest it stops entirely.
  *
  * Guardrails:
- *  - prefers-reduced-motion  -> nothing mounts, no listeners, no canvas paint.
+ *  - prefers-reduced-motion  -> nothing mounts, no listeners, no paint.
  *  - not (hover: hover) and (pointer: fine)  -> touch / coarse pointers get
- *    nothing; there is no cursor to trail. Same gate topDockController uses.
- *  - the canvas is pointer-events:none and sits at z-index 0, behind the
- *    reading content (main is lifted to z-index 1 in globals.css).
+ *    nothing. Same gate the source uses (matchMedia('(hover:hover) and
+ *    (pointer:fine)')) and topDockController uses.
+ *  - canvas is pointer-events:none at z-index 0, behind the reading content
+ *    (main is lifted to z-index 1 in globals.css).
  */
 import { useEffect, useRef } from "react";
 
-const LIFE = 1.5; // seconds a grain lives
-const POOL = 100; // hard cap on simultaneous grains
-const EMIT_STEP = 21; // px of pointer travel per grain laid along the path
-const EMIT_MAX = 4; // grains per move event, so a fast flick can't dump a clump
-const IDLE_TRICKLE = 0.13; // s between grains while the pointer rests but is live
-const IDLE_LINGER = 0.24; // s after the last move that the trickle keeps going
-const PEAK_ALPHA_DARK = 0.36; // additive glow on the dark olive ground
-const PEAK_ALPHA_LIGHT = 0.2; // plain paint on the light ground
+/* ── traced from the source ──────────────────────────────────────────────
+   spawnSpray():  sprayVel = [rand(-38,38), rand(2,64), …]  (world units/s, +y up)
+                  sprayPos += rand(-15,15) on x and y
+   vertex shader: p = position + aVel*age*(1 - 0.34*u)
+                    + vec3(sin(aRnd.y*6.28 + age*2.6) * 22.0 * u,  46.0*age,  0)
+                  gl_PointSize = 13 * aRnd.x * (uScale / -mv.z) * (0.45 + 0.55*(1-u))
+                  aRnd.x = rand(0.50, 1.15)
+   fragment:      alpha = tex.a * vA * 0.85
+                  vA = smoothstep(0,0.09,u) * (1 - smoothstep(0.40,1,u))
+   emitSpray():   n = min(14, floor(distance / 7))   — 7 world units per grain
+                  idle: spawn one every 0.055 s while the pointer rests
+   SPRAY_LIFE = 1.6                                                        */
+const LIFE = 1.6;
+const DRAG = 0.34;
+const EMIT_MAX = 14;
+const IDLE_TRICKLE = 0.055;
+const IDLE_LINGER = 0.24; // s the trickle keeps going after the last move
+const POOL = 400;
+const PEAK = 0.6; /* source uses 0.85 additively, but into an ACES-tonemapped,
+                     bloomed scene that rolls off the highlights; on a flat 2D
+                     canvas 0.85 blows overlapping grains to white, so it is
+                     pulled down until a trail reads as grain, not paste. */
+
+/* world unit -> screen px at the spray plane. The plane sits at z = 240
+   (THREE.Plane((0,0,1), -240)); the camera at z = DIST = 1400. A perspective
+   camera magnifies things nearer than its target by DIST / (DIST - zplane). */
+const WU = 1400 / (1400 - 240); // ≈ 1.207
+const JITTER = 15 * WU;
+const VX = 38 * WU;
+const VY_MIN = 2 * WU;
+const VY_MAX = 64 * WU;
+const LIFT = 46 * WU; // the vertex shader's extra upward drift, + 46.0*age
+const WANDER = 22 * WU; // sin(...) * 22.0 * u
+const EMIT_STEP = 7 * WU; // one grain per 7 world units of pointer travel
 
 type Grain = {
   x: number;
@@ -41,9 +68,8 @@ type Grain = {
   vx: number;
   vy: number;
   birth: number;
-  size: number;
+  size: number; // birth radius in css px (already includes aRnd.x)
   phase: number;
-  seed: number;
 };
 
 const rand = (a: number, b: number) => a + Math.random() * (b - a);
@@ -52,28 +78,18 @@ const smoothstep = (e0: number, e1: number, x: number) => {
   return t * t * (3 - 2 * t);
 };
 
-/** pale warm green on the dark olive ground; a soft olive-grey on the light one */
-function dustRGB(): [number, number, number] {
-  if (typeof document !== "undefined") {
-    const dark =
-      document.documentElement.dataset.theme === "dark" ||
-      (!document.documentElement.dataset.theme &&
-        matchMedia("(prefers-color-scheme: dark)").matches);
-    return dark ? [236, 244, 224] : [92, 96, 82];
-  }
-  return [236, 244, 224];
-}
-
-function makeSprite(rgb: [number, number, number]) {
+/* the source sprite, exactly: radialTexture(64, [[0,'rgba(255,255,255,1)'],
+   [0.35,'rgba(236,244,224,0.5)'],[1,'rgba(236,244,224,0)']]) — a small white
+   core bleeding to a pale green edge, not a big soft disc. */
+function makeSprite() {
   const s = 64;
   const c = document.createElement("canvas");
   c.width = c.height = s;
   const g = c.getContext("2d")!;
   const grad = g.createRadialGradient(s / 2, s / 2, 0, s / 2, s / 2, s / 2);
-  const [r, gr, b] = rgb;
-  grad.addColorStop(0, `rgba(${r},${gr},${b},0.95)`);
-  grad.addColorStop(0.35, `rgba(${r},${gr},${b},0.5)`);
-  grad.addColorStop(1, `rgba(${r},${gr},${b},0)`);
+  grad.addColorStop(0, "rgba(255,255,255,1)");
+  grad.addColorStop(0.35, "rgba(236,244,224,0.5)");
+  grad.addColorStop(1, "rgba(236,244,224,0)");
   g.fillStyle = grad;
   g.fillRect(0, 0, s, s);
   return c;
@@ -91,7 +107,6 @@ export function CursorDust() {
 
     let ctx: CanvasRenderingContext2D | null = null;
     let sprite: HTMLCanvasElement | null = null;
-    let additive = false;
     const grains: Grain[] = [];
     let head = 0;
     let raf = 0;
@@ -100,7 +115,6 @@ export function CursorDust() {
     let now = 0;
     let prevNow = 0;
 
-    // pointer trail state
     let live = false;
     let lastMove = -999;
     let px = 0;
@@ -110,6 +124,15 @@ export function CursorDust() {
     let lastY = 0;
     let trickleAcc = 0;
 
+    /* gl_PointSize in css-px DIAMETER = 13 * aRnd.x * (uScale / -mv.z) * fade,
+       with uScale = drawingBufferHeight/2 = innerHeight*pr/2 and -mv.z ≈ 1160.
+       Divide by pr for css px: 13 * aRnd.x * innerHeight / 2320 * fade.
+       RADIUS_K is the per-grain birth RADIUS before aRnd.x and fade. */
+    let radiusK = 2.5;
+    const recomputeK = () => {
+      radiusK = Math.max(1.1, (13 * window.innerHeight) / 4640);
+    };
+
     let dpr = 1;
     const resize = () => {
       dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -117,30 +140,19 @@ export function CursorDust() {
       canvas.height = Math.round(window.innerHeight * dpr);
       canvas.style.width = window.innerWidth + "px";
       canvas.style.height = window.innerHeight + "px";
+      recomputeK();
       if (ctx) ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    };
-
-    const refreshTheme = () => {
-      const rgb = dustRGB();
-      sprite = makeSprite(rgb);
-      // additive reads as a glow on the dark ground; on the light ground it
-      // would be invisible, so there we just paint the tinted sprite normally.
-      additive =
-        document.documentElement.dataset.theme === "dark" ||
-        (!document.documentElement.dataset.theme &&
-          matchMedia("(prefers-color-scheme: dark)").matches);
     };
 
     const spawn = (x: number, y: number) => {
       const g = grains[head] ?? ({} as Grain);
-      g.x = x + rand(-2, 2);
-      g.y = y + rand(-2, 2);
-      g.vx = rand(-26, 26);
-      g.vy = rand(-46, -8); // upward (canvas +y is down)
+      g.x = x + rand(-JITTER, JITTER);
+      g.y = y + rand(-JITTER, JITTER);
+      g.vx = rand(-VX, VX);
+      g.vy = -rand(VY_MIN, VY_MAX); // source +y is up; canvas +y is down
       g.birth = now;
-      g.size = rand(1.2, 2.7);
-      g.phase = Math.random() * Math.PI * 2;
-      g.seed = Math.random();
+      g.size = radiusK * rand(0.5, 1.15); // 13 * aRnd.x, folded to a radius
+      g.phase = rand(0, Math.PI * 2);
       grains[head] = g;
       head = (head + 1) % POOL;
     };
@@ -161,7 +173,7 @@ export function CursorDust() {
         return;
       }
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.globalCompositeOperation = additive ? "lighter" : "source-over";
+      ctx.globalCompositeOperation = "lighter"; // source: THREE.AdditiveBlending
 
       let alive = 0;
       for (const g of grains) {
@@ -169,13 +181,13 @@ export function CursorDust() {
         const age = now - g.birth;
         if (age < 0 || age > LIFE) continue;
         const u = age / LIFE;
-        const drag = 1 - 0.34 * u;
-        const x = g.x + g.vx * age * drag + Math.sin(g.phase + age * 2.6) * 13 * u;
-        const y = g.y + g.vy * age * drag - 24 * age * u;
-        const peak = additive ? PEAK_ALPHA_DARK : PEAK_ALPHA_LIGHT;
-        const a = smoothstep(0, 0.1, u) * (1 - smoothstep(0.42, 1, u)) * peak;
+        const drag = 1 - DRAG * u;
+        const x = g.x + g.vx * age * drag + Math.sin(g.phase + age * 2.6) * WANDER * u;
+        const y = g.y + g.vy * age * drag - LIFT * age;
+        const vA = smoothstep(0, 0.09, u) * (1 - smoothstep(0.4, 1, u));
+        const a = vA * PEAK;
         if (a <= 0.002) continue;
-        const r = g.size * (0.45 + 0.55 * (1 - u)) * 3;
+        const r = g.size * (0.45 + 0.55 * (1 - u));
         ctx.globalAlpha = a;
         if (sprite) ctx.drawImage(sprite, x - r, y - r, r * 2, r * 2);
         alive++;
@@ -238,18 +250,13 @@ export function CursorDust() {
       if (attached || reduced.matches || !precise.matches) return;
       attached = true;
       ctx = canvas.getContext("2d");
+      sprite = makeSprite();
       t0 = performance.now();
       resize();
-      refreshTheme();
       window.addEventListener("pointermove", onMove, { passive: true });
       window.addEventListener("pointerdown", onMove, { passive: true });
       document.addEventListener("pointerleave", onLeave);
       window.addEventListener("resize", resize);
-      themeObserver.observe(document.documentElement, {
-        attributes: true,
-        attributeFilter: ["data-theme"],
-      });
-      schemeQuery.addEventListener("change", refreshTheme);
     };
     const detach = () => {
       attached = false;
@@ -260,14 +267,10 @@ export function CursorDust() {
       window.removeEventListener("pointerdown", onMove);
       document.removeEventListener("pointerleave", onLeave);
       window.removeEventListener("resize", resize);
-      themeObserver.disconnect();
-      schemeQuery.removeEventListener("change", refreshTheme);
       if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx = null;
     };
 
-    const themeObserver = new MutationObserver(refreshTheme);
-    const schemeQuery = matchMedia("(prefers-color-scheme: dark)");
     const onGateChange = () => {
       if (reduced.matches || !precise.matches) detach();
       else attach();
