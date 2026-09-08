@@ -1,4 +1,4 @@
-export type Project = { slug: string; name: string; subtitle: string; repo: string; description: string; tags: string[]; team: boolean };
+export type Project = { slug: string; name: string; subtitle: string; repo: string; description: string; tags: string[]; team: boolean; image?: string };
 export const projects: Project[] = [
   {
     "slug": "agentfirst",
