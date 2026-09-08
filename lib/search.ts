@@ -1,6 +1,6 @@
 import claims from "@/data/patent-demo.json";
 const stop = new Set(["a", "an", "and", "the", "of", "to", "in", "from", "that", "with", "for", "using", "comprising", "configured", "based", "on"]);
-const tokens = (s: string) => s.toLowerCase().match(/[a-z0-9]+/g)?.filter(t => !stop.has(t)) ?? [];
+export const tokens = (s: string) => s.toLowerCase().match(/[a-z0-9]+/g)?.filter(t => !stop.has(t)) ?? [];
 export function searchClaims(query: string) {
  const docs = claims.map(c => tokens(c.title + " " + c.text));
  const vocab = [...new Set(docs.flat())];

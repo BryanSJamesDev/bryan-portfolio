@@ -238,6 +238,22 @@
   color: var(--muted-foreground);
 }
 
+/* discoverability: a marker on the cards whose detail view carries a live demo */
+.bsx-card-try {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 4;
+  padding: 3px 9px 2px;
+  border: 1px solid color-mix(in srgb, var(--accent) 60%, transparent);
+  border-radius: 999px;
+  color: var(--accent);
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 8px;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+}
+
 /* ── detail panel ───────────────────────────────────────────────────────── */
 .bsx-detail-panel {
   position: absolute;
@@ -310,6 +326,13 @@
   font-weight: 400;
   letter-spacing: .18em;
   text-transform: uppercase;
+}
+
+.bsx-doc-hint {
+  margin: -10px 0 14px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
 }
 
 .bsx-doc-steps {

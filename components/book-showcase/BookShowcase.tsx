@@ -201,7 +201,7 @@ export function BookShowcase({ num = "01", projects, demos }: { num?: string; pr
             ref={(el) => { cardRefs.current[i] = el; }}
             type="button"
             className={`bsx-book-card${selected === i ? " selected" : ""}`}
-            aria-label={`Open ${p.name} details`}
+            aria-label={`Open ${p.name} details${demos[i] ? " — includes an interactive demo" : ""}`}
             tabIndex={mode === "detail" ? -1 : 0}
             onClick={() => mode === "gallery" && openBook(i)}
             onPointerEnter={(e) => (e.currentTarget.dataset.hovered = "true")}
@@ -214,6 +214,7 @@ export function BookShowcase({ num = "01", projects, demos }: { num?: string; pr
           >
             <span className="bsx-book" aria-hidden="true">
               <span className="bsx-front-cover">
+                {demos[i] ? <span className="bsx-card-try">Try it</span> : null}
                 <span className="bsx-cover-copy">
                   <span className="bsx-cover-kicker">Project {NUM[i]}</span>
                   <span className="bsx-cover-title">{p.name}</span>
@@ -233,6 +234,14 @@ export function BookShowcase({ num = "01", projects, demos }: { num?: string; pr
         <div className="bsx-detail-scroll" tabIndex={0} aria-label={`${active?.name ?? "Project"} detail`}>
           <p className="bsx-detail-description">{active?.description}</p>
 
+          {activeDemo ? (
+            <section className="bsx-doc-section" aria-label="Try it">
+              <p className="bsx-doc-label">Try it</p>
+              <p className="bsx-doc-hint">Interactive — runs in your browser.</p>
+              <div className="bsx-field-test">{activeDemo}</div>
+            </section>
+          ) : null}
+
           {activeSteps ? (
             <section className="bsx-doc-section" aria-label="How it works">
               <p className="bsx-doc-label">How it works</p>
@@ -243,13 +252,6 @@ export function BookShowcase({ num = "01", projects, demos }: { num?: string; pr
                   </li>
                 ))}
               </ol>
-            </section>
-          ) : null}
-
-          {activeDemo ? (
-            <section className="bsx-doc-section" aria-label="Field test">
-              <p className="bsx-doc-label">Field test</p>
-              <div className="bsx-field-test">{activeDemo}</div>
             </section>
           ) : null}
         </div>
