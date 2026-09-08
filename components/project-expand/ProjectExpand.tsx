@@ -594,18 +594,22 @@ export function ProjectGrid({
 
   return (
     <>
-      <div className="projects">
-        {projects.map((p, i) => (
-          <ProjectCard
-            key={p.slug}
-            project={p}
-            index={i}
-            cardRef={(el) => {
-              cardRefs.current[i] = el;
-            }}
-            onOpen={() => setOpenIndex(i)}
-          />
-        ))}
+      {/* .proj-rail carries the edge-fade mask + boundary glow; .projects is the
+          scroll container (see globals.css) */}
+      <div className="proj-rail">
+        <div className="projects">
+          {projects.map((p, i) => (
+            <ProjectCard
+              key={p.slug}
+              project={p}
+              index={i}
+              cardRef={(el) => {
+                cardRefs.current[i] = el;
+              }}
+              onOpen={() => setOpenIndex(i)}
+            />
+          ))}
+        </div>
       </div>
       {openIndex !== null ? (
         <ProjectDetail
