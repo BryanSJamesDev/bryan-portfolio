@@ -192,7 +192,7 @@
   inset: 0;
   z-index: 2;
   display: grid;
-  grid-template-rows: auto auto auto minmax(0, 1fr) auto;
+  grid-template-rows: auto auto 1fr auto;
   gap: 9px;
   padding: 22px 20px;
   color: var(--foreground);
@@ -226,21 +226,6 @@
   letter-spacing: .01em;
   line-height: 1.4;
   color: var(--muted-foreground);
-}
-
-.bsx-cover-shot {
-  align-self: stretch;
-  display: grid;
-  place-items: center;
-  min-height: 0;
-  margin: 4px 0;
-  border: 1px dashed var(--border);
-  border-radius: 8px;
-  color: var(--muted-foreground);
-  font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: 9px;
-  letter-spacing: .24em;
-  text-transform: uppercase;
 }
 
 .bsx-cover-footer {

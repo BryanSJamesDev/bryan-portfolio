@@ -212,7 +212,6 @@ export function BookShowcase({ projects, demos }: { projects: Project[]; demos: 
                   <span className="bsx-cover-kicker">Project {NUM[i]}</span>
                   <span className="bsx-cover-title">{p.name}</span>
                   <span className="bsx-cover-subtitle">{p.subtitle}</span>
-                  <span className="bsx-cover-shot">Screenshot pending</span>
                   <span className="bsx-cover-footer">{p.tags.filter((t) => !t.startsWith("[")).slice(0, 3).join(" · ") || "Repo"}</span>
                 </span>
               </span>
