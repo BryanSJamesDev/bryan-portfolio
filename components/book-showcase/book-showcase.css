@@ -130,12 +130,12 @@
     rotateY(var(--yaw));
   transform-style: preserve-3d;
   transition:
-    left 1100ms var(--ease),
-    top 1100ms var(--ease),
-    width 1100ms var(--ease),
-    opacity 500ms ease,
-    filter 500ms ease,
-    transform 520ms var(--ease);
+    left 560ms var(--ease),
+    top 560ms var(--ease),
+    width 560ms var(--ease),
+    opacity 400ms ease,
+    filter 400ms ease,
+    transform 460ms var(--ease);
   will-change: transform, left, top, width;
 }
 
@@ -175,7 +175,7 @@
   transform: translate3d(0, 0, 12px);
   transform-origin: 1.5% center;
   transform-style: preserve-3d;
-  transition: transform 1200ms var(--ease), box-shadow 400ms ease, border-color 200ms ease;
+  transition: transform 600ms var(--ease), box-shadow 360ms ease, border-color 200ms ease;
 }
 
 .bsx-book-card:hover .bsx-front-cover,

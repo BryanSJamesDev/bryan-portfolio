@@ -54,11 +54,17 @@ const FAN = {
 
 const NUM = ["01", "02", "03", "04", "05", "06"];
 
-export function BookShowcase({ projects, demos }: { projects: Project[]; demos: ReactNode[] }) {
+export function BookShowcase({ num = "01", projects, demos }: { num?: string; projects: Project[]; demos: ReactNode[] }) {
   const [mode, setMode] = useState<"gallery" | "detail">("gallery");
   const [selected, setSelected] = useState<number | null>(null);
   const [saved, setSaved] = useState<Record<string, boolean>>({});
   const [toast, setToast] = useState<string | null>(null);
+
+  /* the bookmark state persists across visits (no list view yet, but the
+     toggle means something) */
+  useEffect(() => {
+    try { setSaved(JSON.parse(localStorage.getItem("bsx-saved") || "{}")); } catch { /* private mode */ }
+  }, []);
 
   const rootRef = useRef<HTMLElement>(null);
   const cardRefs = useRef<(HTMLButtonElement | null)[]>([]);
@@ -140,7 +146,7 @@ export function BookShowcase({ projects, demos }: { projects: Project[]; demos: 
     const card = cardRefs.current[i];
     card?.style.setProperty("--detail-yaw", "-5deg");
     card?.style.setProperty("--detail-pitch", "0deg");
-    window.setTimeout(() => closeRef.current?.focus({ preventScroll: true }), reduced.current ? 0 : 700);
+    window.setTimeout(() => closeRef.current?.focus({ preventScroll: true }), reduced.current ? 0 : 560);
   }, []);
 
   const closeDetail = useCallback(() => {
@@ -153,7 +159,7 @@ export function BookShowcase({ projects, demos }: { projects: Project[]; demos: 
     const t = window.setTimeout(() => {
       cardRefs.current[selected]?.focus({ preventScroll: true });
       setSelected(null);
-    }, reduced.current ? 0 : 700);
+    }, reduced.current ? 0 : 560);
     return () => window.clearTimeout(t);
   }, [mode, selected]);
 
@@ -182,7 +188,7 @@ export function BookShowcase({ projects, demos }: { projects: Project[]; demos: 
     <section ref={rootRef} id="work" className="bsx" data-mode={mode} aria-label="Selected work">
       <div className="bsx-topbar">
         <div className="bsx-heading">
-          <p className="section-eyebrow">01 — Projects</p>
+          <p className="section-eyebrow">{num} — Projects</p>
           <h2 className="section-title bsx-title">Projects<span className="accent">.</span></h2>
         </div>
         <span className="bsx-count">06 Projects</span>
@@ -262,18 +268,25 @@ export function BookShowcase({ projects, demos }: { projects: Project[]; demos: 
               </svg>
             </a>
             <button className="bsx-pill" type="button" onClick={() => {
-              if (active) { navigator.clipboard?.writeText(active.repo).catch(() => {}); showToast("Repo link copied."); }
+              if (!active) return;
+              const write = navigator.clipboard?.writeText?.(active.repo);
+              if (write) write.then(() => showToast("Repo link copied.")).catch(() => showToast("Couldn't copy — the link is on the repo button."));
+              else showToast("Copy isn't available here — use the repo button.");
             }}>Copy link</button>
             <button
               className="bsx-pill icon-only"
               type="button"
-              aria-label={active && saved[active.slug] ? "Remove from reading list" : "Save to reading list"}
+              aria-label={active && saved[active.slug] ? "Remove bookmark" : "Bookmark this project"}
               aria-pressed={active ? Boolean(saved[active.slug]) : false}
               onClick={() => {
                 if (!active) return;
                 const next = !saved[active.slug];
-                setSaved((s) => ({ ...s, [active.slug]: next }));
-                showToast(next ? "Saved to your reading list." : "Removed from your reading list.");
+                setSaved((s) => {
+                  const updated = { ...s, [active.slug]: next };
+                  try { localStorage.setItem("bsx-saved", JSON.stringify(updated)); } catch { /* private mode */ }
+                  return updated;
+                });
+                showToast(next ? "Bookmarked." : "Bookmark removed.");
               }}
             >
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.8 4.2h10.4v15.6L12 16.6l-5.2 3.2V4.2Z" /></svg>

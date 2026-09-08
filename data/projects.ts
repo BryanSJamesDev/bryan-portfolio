@@ -79,7 +79,7 @@ export const projects: Project[] = [
   },
   {
     "slug": "robot-pipeline",
-    "name": "robot-perception-action-pipeline",
+    "name": "Robot Perception & Action",
     "subtitle": "Physical AI",
     "repo": "https://github.com/BryanSJamesDev/robot-perception-action-pipeline",
     "description": "Perception-action pipeline for a SO-ARM101 robotic arm using OpenCV and the lerobot/Feetech servo stack, built at the Physical AI Sprint Hackathon (Nebius/NVIDIA/Antioch/Toloka).",
