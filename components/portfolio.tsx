@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
+import { useEffect, useRef, useState, type FormEvent, type ReactNode, type RefObject } from "react";
 import { ArrowUpRight, ArrowDown, Code2, BriefcaseBusiness, Mail, FileText, Volume2, VolumeX, Terminal as TerminalIcon, ArrowRight } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { projects } from "@/data/projects";
@@ -11,6 +11,8 @@ import { LiquidMetal } from "@/components/liquid-metal/LiquidMetal";
 import { CursorDust } from "@/components/cursor-dust/CursorDust";
 import { BookShowcase } from "@/components/book-showcase/BookShowcase";
 function hexRgb(hex:string):[number,number,number]|null{const h=hex.trim().replace('#','');const s=h.length===3?h.split('').map(c=>c+c).join(''):h;const n=parseInt(s,16);if(s.length!==6||Number.isNaN(n))return null;return [(n>>16&255)/255,(n>>8&255)/255,(n&255)/255];}
+// fires once, the first time the node is ~40% on screen — used to auto-play a demo
+function useSeen<T extends HTMLElement>():[RefObject<T|null>,boolean]{const ref=useRef<T|null>(null);const [seen,setSeen]=useState(false);useEffect(()=>{const el=ref.current;if(!el||seen)return;const io=new IntersectionObserver(([e])=>{if(e.isIntersecting){setSeen(true);io.disconnect();}},{threshold:.4});io.observe(el);return()=>io.disconnect();},[seen]);return [ref,seen];}
 // The one fixed section order the page renders in, hero → projects first.
 // The terminal is not in the flow — it's reached via its floating button.
 const ORDER = ['work','experience','about','skills'] as const;
@@ -47,7 +49,35 @@ function PatentDemo(){
   setResults([]);setPhase("searching");
   timer.current=window.setTimeout(()=>{setResults(found);setTerms(qt);setPhase("done");},380);}
  return <div className="demo"><div className="demo-heading"><span className="hex"/> Try the retrieval</div><form className="search-form" onSubmit={run}><label className="sr-only" htmlFor="patent-query">Search representative patent claims</label><input id="patent-query" value={query} onChange={e=>setQuery(e.target.value)} placeholder="Describe an invention" required/><button type="submit" aria-label="Search claims"><ArrowRight size={18}/></button></form><div aria-live="polite">{phase==="searching"&&<p className="demo-searching">Searching claims…</p>}{phase==="done"&&(results.length?<ol className="matches">{results.map((r,i)=><li key={r.id} style={{animationDelay:`${i*70}ms`}}><div><span>{mark(r.title,terms)}</span><strong>{(r.score*100).toFixed(1)}%</strong></div><p>{mark(r.text,terms)}</p></li>)}</ol>:<p className="small">No matching terms. Try “robot camera” or “data schema”.</p>)}</div><p className="demo-note">Toy demo, same retrieval principle as the real 10,578-claim system. Ten representative snippets, TF-IDF cosine scoring here; FAISS and cross-encoder reranking in the full system. Scores are similarity, not confidence.</p><noscript>Enable JavaScript to search the sample claims.</noscript></div>;}
-function ContractDemo(){const [drift,setDrift]=useState(true);const record={amount:drift?"125":125};const valid=typeof record.amount==="number"&&Number.isInteger(record.amount);return <div className="demo"><div className="demo-heading"><span className="hex"/> Test the contract</div><div className="field-toggle"><code>amount: {drift?'"125"':'125'}</code><label htmlFor="drift">Send as string</label><Switch id="drift" checked={drift} onCheckedChange={setDrift} aria-label="Send amount as string"/></div><div className="pipelines" aria-live="polite"><div><span className="mono">Naive pipeline</span><span className="pipeline-node">Incoming record</span><ArrowDown size={14}/><strong>{drift?'Passed through':'Passed through'}</strong><p>{drift?'Silent failure in reporting':'Valid integer accepted'}</p></div><div><span className="mono">Contract-validated</span><span className="pipeline-node">Validate integer</span><ArrowDown size={14}/><strong className="accent">{!valid?'Quarantined':'Accepted'}</strong><p>{drift?'Caught before reporting':'Clean record, no false alarm'}</p></div></div><p className="demo-note">Expected schema: amount is an integer. The same record goes through both paths.</p><noscript>Static example: the string “125” passes a naive pipeline and is quarantined by an integer contract.</noscript></div>}
+function ContractDemo(){
+ const [drift,setDrift]=useState(true);
+ const [play,setPlay]=useState(0);
+ const [settled,setSettled]=useState(true);
+ const reduce=useRef(false);const timer=useRef<number>(0);
+ const [seenRef,seen]=useSeen<HTMLDivElement>();
+ useEffect(()=>{reduce.current=matchMedia('(prefers-reduced-motion: reduce)').matches;return ()=>window.clearTimeout(timer.current);},[]);
+ const replay=()=>{window.clearTimeout(timer.current);if(reduce.current){setSettled(true);return;}setPlay(n=>n+1);setSettled(false);timer.current=window.setTimeout(()=>setSettled(true),840);};
+ useEffect(()=>{if(seen)replay();/* eslint-disable-next-line react-hooks/exhaustive-deps */},[seen]);
+ const val=drift?'"125"':'125';
+ return <div className="demo" ref={seenRef}>
+  <div className="demo-heading"><span className="hex"/> Test the contract</div>
+  <div className="field-toggle"><code>amount: {val}</code><label htmlFor="drift">Send as string</label><Switch id="drift" checked={drift} onCheckedChange={v=>{setDrift(v);replay();}} aria-label="Send amount as string"/><button type="button" className="cg-replay" onClick={replay} aria-label="Replay the run">↻ replay</button></div>
+  <div className="cg-flow" key={play} data-done={settled} data-drift={drift} aria-live="polite">
+   <div className="cg-col">
+    <span className="cg-head mono">Naive pipeline</span>
+    <div className="cg-lane"><span className="cg-node">Incoming record</span><span className="cg-node cg-end">Passed through</span><span className="cg-chip">amount: {val}</span></div>
+    <p className="cg-cap">{drift?'Silent failure in reporting':'Valid integer accepted'}</p>
+   </div>
+   <div className="cg-col">
+    <span className="cg-head mono">Contract-validated</span>
+    <div className="cg-lane"><span className="cg-node">Validate integer</span><span className={`cg-node cg-end ${drift?'cg-blocked':'cg-ok'}`}>{drift?'Quarantined':'Accepted'}</span><span className="cg-chip">amount: {val}</span></div>
+    <p className="cg-cap">{drift?'Caught before reporting':'Clean record, no false alarm'}</p>
+   </div>
+  </div>
+  <p className="demo-note">Expected schema: amount is an integer. The same record goes through both paths.</p>
+  <noscript>Static example: the string “125” passes a naive pipeline and is quarantined by an integer contract.</noscript>
+ </div>;
+}
 function PricingDemo(){return <div className="demo"><div className="demo-heading"><span className="hex"/> Observed pricing spread</div><div className="spread-row"><span>Steam</span><strong>~{pricing.steamSpreadApproxPercent}%</strong></div><div className="bar-track" role="img" aria-label="Steam: approximately 99 percent regional spread"><div style={{width:`${pricing.steamSpreadApproxPercent}%`}}/></div><div className="spread-row"><span>Amazon</span><strong>Correct negative</strong></div><div className="flat-line" role="img" aria-label="Amazon negative control: roughly flat, no spread"/><p className="demo-note">Reported outcomes from the project. Country-level prices were not supplied, so this shows the verified summary rather than invented regional observations.</p><a className="small" href={links.github+"/parity-agent"} target="_blank" rel="noopener noreferrer">Inspect the pricing experiment ↗</a></div>}
 const demoFor=(slug:string):ReactNode=>slug==='patent-search'?<PatentDemo/>:slug==='contract-guard'?<ContractDemo/>:slug==='parity-agent'?<PricingDemo/>:null;
 function Work(){return <BookShowcase num={secNum('work')} projects={projects} demos={projects.map(p=>demoFor(p.slug))}/>;}
