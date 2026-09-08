@@ -79,8 +79,8 @@ const reduced = () =>
 const ROMAN = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"];
 const repoLabel = (url: string) => {
   try {
-    const p = new URL(url).pathname.replace(/^\/|\/$/g, "");
-    return p || url;
+    const parts = new URL(url).pathname.replace(/^\/|\/$/g, "").split("/");
+    return parts[parts.length - 1] || url;
   } catch {
     return url;
   }
@@ -431,17 +431,6 @@ function ProjectDetail({
         if (e.target === e.currentTarget) runClose();
       }}
     >
-      {total > 1 ? (
-        <button
-          type="button"
-          className="pe-edge pe-edge--prev"
-          onClick={() => navigate(-1)}
-          aria-label="Previous project"
-        >
-          <ArrowLeft size={16} aria-hidden="true" />
-        </button>
-      ) : null}
-
       <div
         ref={panelRef}
         className="pe-panel"
@@ -450,21 +439,24 @@ function ProjectDetail({
         aria-modal="true"
         aria-labelledby={titleId}
       >
-        <button
-          ref={closeRef}
-          type="button"
-          className="pe-close"
-          onClick={runClose}
-          aria-label={`Close ${project.name} details`}
-        >
-          <X size={17} aria-hidden="true" />
-        </button>
-
         <div ref={innerRef} className="pe-inner" style={{ opacity: 0 }}>
-          <div className="pe-thumb pe-thumb--lg" aria-hidden="true">
+          {/* left ≈57%: the project image */}
+          <div className="pe-media" aria-hidden="true">
             <ThumbInner project={project} />
           </div>
-          <div className="pe-body">
+
+          {/* right ≈43%: the text column */}
+          <div className="pe-column">
+            <button
+              ref={closeRef}
+              type="button"
+              className="pe-close"
+              onClick={runClose}
+              aria-label={`Close ${project.name} details`}
+            >
+              <X size={17} aria-hidden="true" />
+            </button>
+
             <p className="pe-eyebrow mono">
               Volume {ROMAN[viewIndex] ?? viewIndex + 1} · {project.subtitle}
             </p>
@@ -472,6 +464,7 @@ function ProjectDetail({
               {project.name}
             </h3>
             <p className="pe-deck">{project.description}</p>
+
             <dl className="pe-meta">
               <div>
                 <dt>Stack</dt>
@@ -496,23 +489,37 @@ function ProjectDetail({
                 </dd>
               </div>
             </dl>
+
             {demo ?? null}
+
+            <div className="pe-foot">
+              <button
+                type="button"
+                className="pe-nav-btn"
+                onClick={() => navigate(-1)}
+                aria-label="Previous project"
+                disabled={total < 2}
+              >
+                <ArrowLeft size={15} aria-hidden="true" />
+              </button>
+              <span className="pe-foot-status" aria-hidden="true">
+                Project {viewIndex + 1} of {total}
+              </span>
+              <button
+                type="button"
+                className="pe-nav-btn"
+                onClick={() => navigate(1)}
+                aria-label="Next project"
+                disabled={total < 2}
+              >
+                <ArrowRight size={15} aria-hidden="true" />
+              </button>
+            </div>
           </div>
         </div>
 
         <p ref={liveRef} className="sr-only" aria-live="polite" />
       </div>
-
-      {total > 1 ? (
-        <button
-          type="button"
-          className="pe-edge pe-edge--next"
-          onClick={() => navigate(1)}
-          aria-label="Next project"
-        >
-          <ArrowRight size={16} aria-hidden="true" />
-        </button>
-      ) : null}
     </div>,
     document.body,
   );
