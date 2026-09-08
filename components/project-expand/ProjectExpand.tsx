@@ -591,13 +591,35 @@ export function ProjectGrid({
 }) {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
   const cardRefs = useRef<(HTMLElement | null)[]>([]);
+  const rowRef = useRef<HTMLDivElement>(null);
+
+  /* keep a keyboard-focused card fully in view. The edge cards peek out from
+     behind the fade, so the browser's own focus scroll treats them as "already
+     visible" and doesn't scroll — this forces it. */
+  useEffect(() => {
+    const row = rowRef.current;
+    if (!row) return;
+    const onFocusIn = (e: FocusEvent) => {
+      const card = (e.target as HTMLElement)?.closest?.(".project");
+      if (!card) return;
+      const c = card.getBoundingClientRect();
+      const r = row.getBoundingClientRect();
+      const pad = 24;
+      if (c.right > r.right - pad)
+        row.scrollBy({ left: c.right - (r.right - pad), behavior: "instant" });
+      else if (c.left < r.left + pad)
+        row.scrollBy({ left: c.left - (r.left + pad), behavior: "instant" });
+    };
+    row.addEventListener("focusin", onFocusIn);
+    return () => row.removeEventListener("focusin", onFocusIn);
+  }, []);
 
   return (
     <>
       {/* .proj-rail carries the edge-fade mask + boundary glow; .projects is the
           scroll container (see globals.css) */}
       <div className="proj-rail">
-        <div className="projects">
+        <div className="projects" ref={rowRef}>
           {projects.map((p, i) => (
             <ProjectCard
               key={p.slug}
