@@ -34,7 +34,7 @@
   min-height: 100svh;
   overflow: hidden;
   color: var(--text);
-  font-family: var(--serif);
+  font-family: var(--font-sans), system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   /* gallery mode: no background at all — the page --background shows through
      (no seam with the section above) and the fixed cursor-dust canvas behind
@@ -259,11 +259,11 @@
   flex: 0 0 auto;
   margin: 0 0 24px;
   color: var(--pink);
+  font-family: var(--serif);
   font-size: clamp(44px, 5vw, 72px);
-  font-style: italic;
   font-weight: 500;
-  letter-spacing: -.055em;
-  line-height: .96;
+  letter-spacing: -.05em;
+  line-height: .98;
 }
 
 .bsx-detail-description {
@@ -305,10 +305,10 @@
 .bsx-doc-label {
   margin: 0 0 16px;
   color: var(--pink);
-  font-size: 12px;
-  font-style: italic;
-  font-weight: 700;
-  letter-spacing: .16em;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: .18em;
   text-transform: uppercase;
 }
 
@@ -330,10 +330,10 @@
 
 .bsx-doc-steps li::before {
   content: counter(guide-step, decimal-leading-zero);
-  padding-top: 2px;
-  color: rgba(160, 192, 165, .7);
-  font-size: 12px;
-  font-style: italic;
+  padding-top: 3px;
+  color: rgba(160, 192, 165, .75);
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 11px;
   letter-spacing: .08em;
 }
 
@@ -342,7 +342,6 @@
 .bsx-doc-step-copy strong {
   color: #e2e8de;
   font-size: 15px;
-  font-style: italic;
   font-weight: 650;
 }
 
@@ -363,7 +362,7 @@
 
 /* pull the site's olive/mono demo internals into the paper palette */
 .bsx-field-test .demo { border-top: 0; margin-top: 0; padding-top: 0; }
-.bsx-field-test .demo-heading { color: var(--pink); font-style: italic; letter-spacing: .06em; }
+.bsx-field-test .demo-heading { color: var(--pink); letter-spacing: .1em; }
 .bsx-field-test .demo-heading .hex { background: var(--pink); }
 .bsx-field-test .demo-note,
 .bsx-field-test .matches p,
@@ -410,16 +409,18 @@
   border: 1px solid rgba(176, 192, 178, .3);
   border-radius: 999px;
   color: var(--pink);
-  font-size: 11px;
-  font-style: italic;
-  letter-spacing: .04em;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: .06em;
+  text-transform: uppercase;
 }
 
 .bsx-meta-note {
   margin-left: auto;
   color: #a6b2a3;
-  font-size: 13px;
-  font-style: italic;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 11px;
+  letter-spacing: .04em;
   font-weight: 650;
 }
 
@@ -462,9 +463,9 @@
   background: var(--periwinkle);
   color: #1b231e;
   cursor: pointer;
-  font-size: 15px;
-  font-style: italic;
-  font-weight: 700;
+  font-size: 14px;
+  font-weight: 650;
+  letter-spacing: .01em;
   white-space: nowrap;
   text-decoration: none;
   transition: transform 220ms var(--ease), filter 220ms ease, background 220ms ease;
