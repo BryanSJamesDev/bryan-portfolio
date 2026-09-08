@@ -12,7 +12,7 @@
    against this ground — pure #ffffff for primary copy (its --ink), a lifted
    olive-grey for secondary — and every text token is verified ≥ WCAG AA 4.5:1
    on both the page and the --panel surface. */
-:root{--background:#4a4d44;--foreground:#ffffff;--muted:#4d5046;--muted-foreground:#d2d5c8;--border:#7c8070;--accent:#b8d1ff;--primary:#b8d1ff;--primary-foreground:#121315;--input:#868a79;--ring:#b8d1ff;--panel:#575a4f;--radius:0px;--rail-gold:#e3bb52;--glow-gold:#ff9d24;color-scheme:dark}
+:root{--background:#4a4d44;--foreground:#ffffff;--muted:#4d5046;--muted-foreground:#d2d5c8;--border:#7c8070;--accent:#b8d1ff;--primary:#b8d1ff;--primary-foreground:#121315;--input:#868a79;--ring:#b8d1ff;--panel:#575a4f;--radius:10px;--rail-gold:#e3bb52;--glow-gold:#ff9d24;color-scheme:dark}
 @theme inline{--color-background:var(--background);--color-foreground:var(--foreground);--color-muted:var(--muted);--color-muted-foreground:var(--muted-foreground);--color-border:var(--border);--color-primary:var(--primary);--color-primary-foreground:var(--primary-foreground);--color-input:var(--input);--color-ring:var(--ring)}
 *{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:110px}body{margin:0;background:var(--background);color:var(--foreground);font-family:var(--font-sans),Arial,sans-serif;font-size:16px;line-height:1.65}::selection{background:var(--accent);color:var(--background)}a{color:inherit;text-decoration:none;text-underline-offset:5px}a:hover{text-decoration:underline;color:var(--accent)}button,input{font:inherit}button{cursor:pointer}button:disabled{cursor:default}button,a,input,[role=radio],[role=switch]{transition:border-color .18s ease,color .18s ease,background .18s ease}button:focus-visible,a:focus-visible,input:focus-visible,[role=radio]:focus-visible,[role=switch]:focus-visible{outline:2px solid var(--accent);outline-offset:5px}p,h1,h2,h3,ul{margin:0}button{border:0;background:transparent;color:inherit}svg{flex-shrink:0}main{max-width:1100px;margin:auto;padding:0 42px}.mono,.eyebrow,.tag,.tags,.project h3,.project-number,.demo-heading,.terminal,.footer-end,.sticky-nav,.terminal-tab,.audience{font-family:var(--font-mono),monospace}.small{font-size:14px}.accent{color:var(--accent)}.hex{display:inline-block;width:9px;height:10px;background:var(--accent);clip-path:polygon(25% 0%,75% 0%,100% 50%,75% 100%,25% 100%,0% 50%);flex-shrink:0}
 .hero{padding-top:86px;max-width:880px;margin:auto;position:relative}
@@ -30,6 +30,15 @@
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*:before,*:after{animation:none!important;transition:none!important}.reveal.pending{opacity:1;transform:none}.click-hex{display:none}}
 .line-word{display:inline-block;max-width:100%;overflow-wrap:anywhere}.reveal.visible .line-word{animation:pop .4s cubic-bezier(.16,1,.3,1) both;animation-delay:var(--line-delay,0ms)}.project.reveal.visible{animation:none}.project.reveal.pending{transform:none}.line-text{position:relative}.project .tags{font-size:12px}.tag{font-size:12px}.pipelines .mono,.pipelines p{font-size:12px}.pipelines .mono{white-space:normal}
 
+/* ── soft corners: --radius (10px) on the bordered / filled square surfaces.
+   Full pills (nav dock, liquid-metal buttons: 999px) and circles (rail dots,
+   detail close / edge buttons: 50%) keep their own radius. */
+.project,.availability,.terminal,.utilities,.terminal-tab,.skip-link,.audience-options,.search-form,.field-toggle,.pipelines>div,.bar-track,.bar-track>div,.pe-panel,.pe-thumb{border-radius:var(--radius)}
+.tag,.pipeline-node,.audience-options label{border-radius:calc(var(--radius) - 5px)}
+.terminal,.pe-panel{overflow:hidden}
+.pe-inner .pe-thumb--lg{border-radius:0}
+.pe-close,.pe-edge{border-radius:50%}
+
 /* ── project card → detail view (hand-rolled FLIP; components/project-expand) ──
    The collapsed card is preview + trigger: a placeholder thumb and the title
    open the panel; the Repo pill stays a plain scoped link. The demos that used
@@ -40,25 +49,34 @@
 .pe-thumb{position:relative;display:block;width:100%;aspect-ratio:16/9;overflow:hidden;border:1px solid var(--border);background:var(--muted) repeating-linear-gradient(135deg,transparent 0 11px,rgba(255,255,255,.022) 11px 12px)}
 .pe-thumb__img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 .pe-thumb__label{position:absolute;inset:0;display:grid;place-items:center;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted-foreground)}
-.pe-thumb-btn{margin-bottom:20px;padding:0;border-radius:0;text-align:left;color:inherit;cursor:pointer;transition:border-color .18s ease}
+.pe-thumb-btn{margin-bottom:20px;padding:0;text-align:left;color:inherit;cursor:pointer;transition:border-color .18s ease}
 .pe-thumb-btn:hover,.pe-thumb-btn:focus-visible{border-color:var(--glow-gold)}
 .pe-title-btn{display:inline;margin:0;padding:0;border:0;background:none;font:inherit;letter-spacing:inherit;color:inherit;cursor:pointer;text-align:left}
 .pe-title-btn:hover{color:var(--accent)}
 .project-copy--clamp{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden}
-.pe-scrim{position:fixed;inset:0;z-index:90;display:flex;padding:clamp(16px,5vh,64px) 20px;overflow-y:auto;overscroll-behavior:contain;background:rgba(9,11,8,.64)}
-.pe-panel{position:relative;margin:auto;width:min(860px,100%);background:var(--panel);border:1px solid var(--border)}
-.pe-close{position:absolute;top:9px;right:9px;z-index:3;width:34px;height:34px;display:grid;place-items:center;border:1px solid var(--border);background:var(--panel);color:var(--muted-foreground)}
+.pe-scrim{position:fixed;inset:0;z-index:90;display:flex;padding:clamp(16px,5vh,64px) clamp(50px,6vw,78px);overflow-y:auto;overscroll-behavior:contain;background:rgba(9,11,8,.66)}
+.pe-panel{position:relative;margin:auto;width:min(760px,100%);background:var(--panel);border:1px solid var(--border)}
+.pe-close{position:absolute;top:12px;right:12px;z-index:3;width:36px;height:36px;display:grid;place-items:center;border:1px solid var(--border);background:rgba(87,90,79,.72);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);color:var(--muted-foreground);transition:color .16s ease,border-color .16s ease}
 .pe-close:hover,.pe-close:focus-visible{color:var(--foreground);border-color:var(--glow-gold)}
-.pe-inner .pe-thumb--lg{width:100%;aspect-ratio:16/7;max-height:300px;border:0;border-bottom:1px solid var(--border)}
-.pe-body{padding:24px 28px 30px}
-.pe-eyebrow{font-size:12px;color:var(--muted-foreground);margin-bottom:13px}
-.pe-panel h3{font-size:24px;letter-spacing:-.04em;line-height:1.3;overflow-wrap:anywhere}
-.pe-subtitle{font-size:13px;color:var(--muted-foreground);margin-top:7px}
-.pe-desc{font-size:16px;line-height:1.75;margin-top:18px}
-.pe-body .tags{margin-top:20px}
-.pe-actions{margin-top:22px;display:flex;gap:12px;flex-wrap:wrap}
-@media(max-width:767px){.pe-body{padding:20px 18px 24px}.pe-panel h3{font-size:21px}.pe-inner .pe-thumb--lg{aspect-ratio:16/9}}
-@media(prefers-reduced-motion:reduce){.pe-thumb-btn,.pe-close{transition:none}}
+.pe-inner .pe-thumb--lg{width:100%;aspect-ratio:16/7;max-height:280px;border:0;border-bottom:1px solid var(--border)}
+.pe-body{padding:clamp(22px,3vw,38px) clamp(20px,3vw,40px) clamp(26px,3vw,38px)}
+.pe-eyebrow{font-size:11px;letter-spacing:.13em;text-transform:uppercase;color:var(--muted-foreground);margin:0 46px 16px 0}
+.pe-title{margin:0;font-size:clamp(1.85rem,4vw,2.7rem);font-weight:550;letter-spacing:-.04em;line-height:1.02;overflow-wrap:anywhere}
+.pe-deck{margin:20px 0 0;font-size:15px;line-height:1.72}
+.pe-deck::first-letter{float:left;margin:6px 9px 0 0;color:var(--accent);font-size:3.1em;line-height:.72;font-weight:550}
+.pe-meta{display:grid;grid-template-columns:1fr 1fr;gap:16px 26px;margin:28px 0 0;padding:22px 0 0;border-top:1px solid var(--border)}
+.pe-meta div{min-width:0}
+.pe-meta dt{margin:0 0 6px;font-family:var(--font-mono),monospace;font-size:10px;letter-spacing:.11em;text-transform:uppercase;color:var(--muted-foreground)}
+.pe-meta dd{margin:0;font-size:13px;line-height:1.5;overflow-wrap:anywhere}
+.pe-meta dd a{text-decoration:underline;text-underline-offset:3px}
+.pe-meta dd a:hover{color:var(--accent)}
+.pe-body .demo{margin-top:30px}
+.pe-edge{position:fixed;top:50%;transform:translateY(-50%);z-index:4;width:44px;height:44px;display:grid;place-items:center;border:1px solid var(--border);background:rgba(87,90,79,.8);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);color:var(--muted-foreground);cursor:pointer;transition:color .16s ease,border-color .16s ease}
+.pe-edge:hover,.pe-edge:focus-visible{color:var(--foreground);border-color:var(--glow-gold)}
+.pe-edge--prev{left:clamp(6px,2vw,30px)}
+.pe-edge--next{right:clamp(6px,2vw,30px)}
+@media(max-width:767px){.pe-scrim{padding:24px 12px}.pe-body{padding:20px 18px 26px}.pe-meta{grid-template-columns:1fr}.pe-inner .pe-thumb--lg{aspect-ratio:16/9}.pe-edge{width:42px;height:42px;top:auto;bottom:18px;transform:none;background:rgba(87,90,79,.92)}.pe-edge--prev{left:14px}.pe-edge--next{right:14px}}
+@media(prefers-reduced-motion:reduce){.pe-thumb-btn,.pe-close,.pe-edge{transition:none}}
 
 /* ── ThreeUI AnimatedTopDock — Sable Dock variant (source rev 5a736cd) ─────────
    Only the rules the sable dock uses, lifted from src/shaders/threeui.css.
