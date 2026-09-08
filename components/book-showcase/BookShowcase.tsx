@@ -166,16 +166,18 @@ export function BookShowcase({ projects, demos }: { projects: Project[]; demos: 
   }, []);
 
   const closeDetail = useCallback(() => {
-    setMode((m) => {
-      if (m !== "detail") return m;
-      const last = selected;
-      window.setTimeout(() => {
-        cardRefs.current[last ?? 0]?.focus({ preventScroll: true });
-        setSelected(null);
-      }, reduced.current ? 0 : 700);
-      return "gallery";
-    });
-  }, [selected]);
+    setMode((m) => (m === "detail" ? "gallery" : m));
+  }, []);
+
+  /* after the close transition, return focus to the card and drop the selection */
+  useEffect(() => {
+    if (mode !== "gallery" || selected === null) return;
+    const t = window.setTimeout(() => {
+      cardRefs.current[selected]?.focus({ preventScroll: true });
+      setSelected(null);
+    }, reduced.current ? 0 : 700);
+    return () => window.clearTimeout(t);
+  }, [mode, selected]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") closeDetail(); };
@@ -250,6 +252,8 @@ export function BookShowcase({ projects, demos }: { projects: Project[]; demos: 
           );
         })}
       </div>
+
+      <div className="bsx-scrim" aria-hidden="true" onClick={closeDetail} />
 
       <section className="bsx-detail-panel" aria-live="polite" aria-hidden={mode !== "detail"} inert={mode !== "detail"}>
         <h3 className="bsx-detail-title">{active?.name}</h3>

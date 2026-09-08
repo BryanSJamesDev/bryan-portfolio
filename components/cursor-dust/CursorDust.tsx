@@ -78,18 +78,19 @@ const smoothstep = (e0: number, e1: number, x: number) => {
   return t * t * (3 - 2 * t);
 };
 
-/* the source sprite, exactly: radialTexture(64, [[0,'rgba(255,255,255,1)'],
-   [0.35,'rgba(236,244,224,0.5)'],[1,'rgba(236,244,224,0)']]) — a small white
-   core bleeding to a pale green edge, not a big soft disc. */
+/* the source sprite: a small warm-white core bleeding to a cream edge (recoloured
+   from the reference's pale-green to sit in the aged-paper palette — same radial
+   sprite, same physics). Original stops: 0 rgba(255,255,255,1),
+   0.35 rgba(236,244,224,0.5), 1 rgba(236,244,224,0). */
 function makeSprite() {
   const s = 64;
   const c = document.createElement("canvas");
   c.width = c.height = s;
   const g = c.getContext("2d")!;
   const grad = g.createRadialGradient(s / 2, s / 2, 0, s / 2, s / 2, s / 2);
-  grad.addColorStop(0, "rgba(255,255,255,1)");
-  grad.addColorStop(0.35, "rgba(236,244,224,0.5)");
-  grad.addColorStop(1, "rgba(236,244,224,0)");
+  grad.addColorStop(0, "rgba(249,241,222,1)");
+  grad.addColorStop(0.35, "rgba(224,204,158,0.5)");
+  grad.addColorStop(1, "rgba(224,204,158,0)");
   g.fillStyle = grad;
   g.fillRect(0, 0, s, s);
   return c;

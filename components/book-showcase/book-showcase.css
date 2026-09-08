@@ -36,10 +36,13 @@
   color: var(--text);
   font-family: var(--serif);
   -webkit-font-smoothing: antialiased;
+  /* top stop pulled to the page --background so the band joins the rest of the
+     site seamlessly (the reference stage opened on #343025); the radial lifts
+     and the darker foot still give the showcase its own depth. */
   background:
     radial-gradient(circle at 49% 84%, rgba(117, 102, 71, .2), transparent 34%),
-    radial-gradient(circle at 14% 4%, rgba(100, 112, 77, .12), transparent 28%),
-    linear-gradient(180deg, #343025 0%, var(--ink) 48%, #211e18 100%);
+    radial-gradient(circle at 14% 4%, rgba(100, 112, 77, .1), transparent 28%),
+    linear-gradient(180deg, #29251d 0%, #2c2820 34%, var(--ink) 60%, #211e18 100%);
 }
 
 .bsx *,
@@ -702,31 +705,48 @@
 
 .bsx-pill.icon-only[aria-pressed="true"] svg { fill: var(--pink); stroke: var(--pink); }
 
-/* ── close button ──────────────────────────────────────────────────────── */
-.bsx-close-button {
+/* ── scrim: click-outside-to-close backdrop (detail mode only) ──────────── */
+.bsx-scrim {
   position: absolute;
-  z-index: 52;
-  top: 30px;
-  left: 50%;
+  z-index: 8;
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+.bsx[data-mode="detail"] .bsx-scrim { pointer-events: auto; }
+
+/* ── close button ──────────────────────────────────────────────────────── */
+/* .bsx button {…} in the reset is (0,1,1) and would beat a plain .bsx-close-button,
+   so this stays element-qualified to keep its own fill / border. */
+.bsx button.bsx-close-button {
+  position: absolute;
+  z-index: 55;
+  top: 9svh;
+  right: 4.5%;
   display: grid;
-  width: 54px;
-  height: 54px;
+  width: 58px;
+  height: 58px;
   place-items: center;
-  border: 1px solid rgba(255, 255, 255, .26);
+  border: 1px solid rgba(238, 226, 202, .38);
   border-radius: 50%;
-  background: rgba(42, 37, 28, .28);
+  background: rgba(28, 25, 20, .92);
   color: var(--paper);
   cursor: pointer;
-  font-size: 27px;
-  font-weight: 200;
+  font-size: 30px;
+  font-weight: 300;
+  line-height: 1;
   opacity: 0;
-  transform: translate3d(-50%, -18px, 0) rotate(-45deg);
-  transition: opacity 400ms ease, transform 620ms var(--ease), background 220ms ease;
+  transform: translate3d(0, -14px, 0) rotate(-45deg) scale(.85);
+  transition: opacity 380ms ease, transform 560ms var(--ease), background 200ms ease, border-color 200ms ease;
   pointer-events: none;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, .4);
   backdrop-filter: blur(8px);
 }
 
-.bsx-close-button:hover { background: rgba(255, 255, 255, .08); }
+.bsx button.bsx-close-button:hover {
+  background: rgba(46, 41, 32, .96);
+  border-color: rgba(238, 226, 202, .7);
+}
 
 /* ── blossoms ──────────────────────────────────────────────────────────── */
 .bsx-blossom-field {
@@ -829,13 +849,23 @@
   margin: 0;
 }
 
-/* while a book is open the band owns the viewport — quiet the site's own
-   fixed chrome so it doesn't poke through the overlay */
+/* while a book is open the band owns the viewport — fully remove the site's own
+   fixed chrome from paint AND hit-testing. <main> carries position:relative
+   z-index:1, so its whole subtree (the .bsx overlay included) sits below the
+   dock's z-30 shell in the root stacking order; visibility:hidden is what
+   actually stops those elements from swallowing clicks over the detail view
+   (the dock re-enables pointer-events on its own items, so opacity:0 alone left
+   them clickable). */
 body.bsx-locked .terminal-tab,
 body.bsx-locked .scroll-rail,
 body.bsx-locked .utilities,
 body.bsx-locked .top-dock-shell,
-body.bsx-locked .sticky-nav { opacity: 0 !important; pointer-events: none !important; }
+body.bsx-locked .top-dock-shell *,
+body.bsx-locked .sticky-nav {
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
 
 .bsx[data-mode="detail"] .bsx-hero-word {
   opacity: 0;
@@ -894,13 +924,15 @@ body.bsx-locked .sticky-nav { opacity: 0 !important; pointer-events: none !impor
 .bsx[data-mode="detail"] .bsx-detail-panel { opacity: 1; pointer-events: auto; }
 .bsx[data-mode="gallery"] .bsx-detail-panel { transition-duration: 160ms; transition-delay: 0ms; }
 
-.bsx[data-mode="detail"] .bsx-close-button {
+.bsx[data-mode="detail"] button.bsx-close-button {
   opacity: 1;
-  transform: translate3d(-50%, 0, 0) rotate(0);
+  transform: translate3d(0, 0, 0) rotate(0) scale(1);
   pointer-events: auto;
 }
 
 .bsx[data-mode="detail"] .bsx-blossom-field { opacity: 1; }
+/* the count pill shares the top-right corner with the close button */
+.bsx[data-mode="detail"] .bsx-count { opacity: 0; pointer-events: none; }
 
 /* ── responsive ────────────────────────────────────────────────────────── */
 /* short viewports: scale the fan down and lift it so bottoms clear the fold
@@ -973,20 +1005,21 @@ body.bsx-locked .sticky-nav { opacity: 0 !important; pointer-events: none !impor
   .bsx[data-mode="detail"] .bsx-gallery { display: none; }
   .bsx[data-mode="detail"] .bsx-topbar { display: none; }
   .bsx[data-mode="detail"] .bsx-detail-panel { margin-top: 8px; }
-  .bsx-close-button {
+  .bsx button.bsx-close-button {
     position: fixed;
-    top: auto;
-    bottom: 18px;
-    left: 50%;
+    top: 14px;
+    right: 14px;
+    bottom: auto;
+    left: auto;
     z-index: 70;
-    background: rgba(42, 37, 28, .7);
-    transform: translate3d(-50%, 24px, 0) rotate(-45deg);
+    width: 52px;
+    height: 52px;
+    transform: translate3d(0, -10px, 0) rotate(-45deg) scale(.85);
   }
-  .bsx[data-mode="detail"] .bsx-close-button { transform: translate3d(-50%, 0, 0) rotate(0); }
+  .bsx[data-mode="detail"] button.bsx-close-button { transform: translate3d(0, 0, 0) rotate(0) scale(1); }
   .bsx[data-mode="detail"] .bsx-hero-word { display: none; }
   .bsx-detail-scroll { max-height: none; -webkit-mask-image: none; mask-image: none; padding-bottom: 8px; }
   .bsx-detail-title { font-size: clamp(40px, 11vw, 62px); }
-  .bsx-close-button { top: 16px; }
   .bsx-action-rail { overflow-x: auto; scrollbar-width: none; }
   .bsx-action-rail::-webkit-scrollbar { display: none; }
   .bsx-pill { min-width: 128px; }
