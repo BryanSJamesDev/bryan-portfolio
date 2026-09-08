@@ -40,16 +40,6 @@ const STEPS: Record<string, { title: string; body: string }[]> = {
   ],
 };
 
-type CoverTone = { color: string; ink: string };
-const TONES: CoverTone[] = [
-  { color: "#363126", ink: "#31291e" },
-  { color: "#5d5540", ink: "#33301f" },
-  { color: "#566044", ink: "#293024" },
-  { color: "#6f4b34", ink: "#4b281a" },
-  { color: "#4a5340", ink: "#26302a" },
-  { color: "#7c5a3a", ink: "#3a2a1a" },
-];
-
 const FAN = {
   x: ["14%", "27.5%", "41.5%", "58.5%", "72.5%", "86%"],
   y: ["44%", "38%", "33%", "33%", "38%", "44%"],
@@ -62,19 +52,7 @@ const FAN = {
   z: [1, 3, 5, 6, 4, 2],
 };
 
-const ROMAN = ["I", "II", "III", "IV", "V", "VI"];
-
-const BLOSSOMS = [
-  { x: "4%", s: "30px", r: "18deg", d: "10s", delay: "-4s" },
-  { x: "16%", s: "19px", r: "74deg", d: "8.5s", delay: "-1s" },
-  { x: "31%", s: "25px", r: "-20deg", d: "11s", delay: "-7s" },
-  { x: "44%", s: "17px", r: "48deg", d: "9.5s", delay: "-5s" },
-  { x: "58%", s: "28px", r: "12deg", d: "12s", delay: "-8s" },
-  { x: "69%", s: "20px", r: "92deg", d: "9s", delay: "-3s" },
-  { x: "79%", s: "32px", r: "32deg", d: "11.5s", delay: "-6s" },
-  { x: "89%", s: "22px", r: "-14deg", d: "10.5s", delay: "-9s" },
-  { x: "96%", s: "16px", r: "56deg", d: "8s", delay: "-2s" },
-];
+const NUM = ["01", "02", "03", "04", "05", "06"];
 
 export function BookShowcase({ projects, demos }: { projects: Project[]; demos: ReactNode[] }) {
   const [mode, setMode] = useState<"gallery" | "detail">("gallery");
@@ -203,54 +181,42 @@ export function BookShowcase({ projects, demos }: { projects: Project[]; demos: 
   return (
     <section ref={rootRef} id="work" className="bsx" data-mode={mode} aria-label="Selected work">
       <div className="bsx-topbar">
-        <p className="bsx-kicker"><span>01 / the evidence</span>Selected work</p>
         <span className="bsx-count">06 Projects</span>
       </div>
 
-      <h2 className="bsx-hero-word" aria-hidden="true">Projects</h2>
+      <p className="bsx-hero-word" aria-hidden="true">projects</p>
 
-      <div className="bsx-gallery" aria-label="Project field manuals">
-        {projects.map((p, i) => {
-          const tone = TONES[i % TONES.length];
-          return (
-            <button
-              key={p.slug}
-              ref={(el) => { cardRefs.current[i] = el; }}
-              type="button"
-              className={`bsx-book-card${selected === i ? " selected" : ""}`}
-              aria-label={`Open ${p.name} details`}
-              tabIndex={mode === "detail" ? -1 : 0}
-              onClick={() => mode === "gallery" && openBook(i)}
-              onPointerEnter={(e) => (e.currentTarget.dataset.hovered = "true")}
-              onPointerLeave={(e) => (e.currentTarget.dataset.hovered = "false")}
-              style={{
-                // @ts-expect-error custom properties
-                "--x": FAN.x[i], "--y": FAN.y[i], "--w": FAN.w[i],
-                "--r": FAN.r[i], "--yaw": FAN.yaw[i], zIndex: FAN.z[i],
-                "--cover-color": tone.color, "--cover-ink": tone.ink,
-              }}
-            >
-              <span className="bsx-book" aria-hidden="true">
-                <span className="bsx-book-shadow" />
-                <span className="bsx-book-back" />
-                <span className="bsx-page-block" />
-                <span className="bsx-page-fan"><i /><i /><i /><i /></span>
-                <span className="bsx-front-cover">
-                  <span className="bsx-corner tl" /><span className="bsx-corner tr" />
-                  <span className="bsx-corner bl" /><span className="bsx-corner br" />
-                  <span className="bsx-cover-copy">
-                    <span className="bsx-cover-kicker">Project · {ROMAN[i]}</span>
-                    <span className="bsx-cover-title">{p.name}</span>
-                    <span className="bsx-cover-subtitle">{p.subtitle}</span>
-                    <span className="bsx-cover-plate">Plate<br />Pending</span>
-                    <span className="bsx-cover-footer">{p.tags.filter((t) => !t.startsWith("[")).slice(0, 3).join(" · ") || "Field Manual"}</span>
-                  </span>
+      <div className="bsx-gallery" aria-label="Projects">
+        {projects.map((p, i) => (
+          <button
+            key={p.slug}
+            ref={(el) => { cardRefs.current[i] = el; }}
+            type="button"
+            className={`bsx-book-card${selected === i ? " selected" : ""}`}
+            aria-label={`Open ${p.name} details`}
+            tabIndex={mode === "detail" ? -1 : 0}
+            onClick={() => mode === "gallery" && openBook(i)}
+            onPointerEnter={(e) => (e.currentTarget.dataset.hovered = "true")}
+            onPointerLeave={(e) => (e.currentTarget.dataset.hovered = "false")}
+            style={{
+              // @ts-expect-error custom properties
+              "--x": FAN.x[i], "--y": FAN.y[i], "--w": FAN.w[i],
+              "--r": FAN.r[i], "--yaw": FAN.yaw[i], zIndex: FAN.z[i],
+            }}
+          >
+            <span className="bsx-book" aria-hidden="true">
+              <span className="bsx-front-cover">
+                <span className="bsx-cover-copy">
+                  <span className="bsx-cover-kicker">Project {NUM[i]}</span>
+                  <span className="bsx-cover-title">{p.name}</span>
+                  <span className="bsx-cover-subtitle">{p.subtitle}</span>
+                  <span className="bsx-cover-shot">Screenshot pending</span>
+                  <span className="bsx-cover-footer">{p.tags.filter((t) => !t.startsWith("[")).slice(0, 3).join(" · ") || "Repo"}</span>
                 </span>
-                <span className="bsx-open-badge">Read</span>
               </span>
-            </button>
-          );
-        })}
+            </span>
+          </button>
+        ))}
       </div>
 
       <div className="bsx-scrim" aria-hidden="true" onClick={closeDetail} />
@@ -316,16 +282,6 @@ export function BookShowcase({ projects, demos }: { projects: Project[]; demos: 
       </section>
 
       <button ref={closeRef} className="bsx-close-button" type="button" aria-label="Close detail view" tabIndex={mode === "detail" ? 0 : -1} onClick={closeDetail}>×</button>
-
-      <div className="bsx-blossom-field" aria-hidden="true">
-        {BLOSSOMS.map((bl, i) => (
-          <span key={i} className="bsx-blossom" style={{
-            // @ts-expect-error custom properties
-            "--blossom-x": bl.x, "--blossom-size": bl.s, "--blossom-r": bl.r,
-            "--blossom-duration": bl.d, "--blossom-delay": bl.delay,
-          }}><i /><i /><i /><i /><i /></span>
-        ))}
-      </div>
 
       <div className="bsx-toast" role="status" aria-live="polite" data-show={toast ? "true" : "false"}>{toast}</div>
     </section>

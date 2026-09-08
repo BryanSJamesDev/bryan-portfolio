@@ -36,13 +36,11 @@
   color: var(--text);
   font-family: var(--serif);
   -webkit-font-smoothing: antialiased;
-  /* top stop pulled to the page --background so the band joins the rest of the
-     site seamlessly (the reference stage opened on #343025); the radial lifts
-     and the darker foot still give the showcase its own depth. */
-  background:
-    radial-gradient(circle at 49% 84%, rgba(117, 102, 71, .2), transparent 34%),
-    radial-gradient(circle at 14% 4%, rgba(100, 112, 77, .1), transparent 28%),
-    linear-gradient(180deg, #29251d 0%, #2c2820 34%, var(--ink) 60%, #211e18 100%);
+  /* gallery mode: no background at all — the page --background shows through
+     (no seam with the section above) and the fixed cursor-dust canvas behind
+     <main> stays visible over this section like everywhere else. The opaque
+     fill only comes back in detail mode, where the band is a modal overlay. */
+  background: transparent;
 }
 
 .bsx *,
@@ -65,18 +63,6 @@
   -webkit-tap-highlight-color: transparent;
 }
 
-.bsx::after {
-  content: "";
-  position: absolute;
-  z-index: 30;
-  inset: 0;
-  pointer-events: none;
-  opacity: .14;
-  background-image:
-    url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.86' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.22'/%3E%3C/svg%3E");
-  mix-blend-mode: soft-light;
-}
-
 /* ── topbar ─────────────────────────────────────────────────────────────── */
 .bsx-topbar {
   position: absolute;
@@ -85,28 +71,10 @@
   left: 0;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   width: 100%;
   padding: 26px 3.2vw;
   pointer-events: none;
-}
-
-.bsx-kicker {
-  color: var(--pink);
-  font-size: clamp(13px, 1.1vw, 16px);
-  font-style: italic;
-  font-weight: 600;
-  letter-spacing: .02em;
-  line-height: 1.3;
-}
-
-.bsx-kicker span {
-  display: block;
-  color: var(--muted);
-  font-size: .78em;
-  font-style: normal;
-  letter-spacing: .12em;
-  text-transform: uppercase;
 }
 
 .bsx-count {
@@ -123,19 +91,24 @@
   text-transform: uppercase;
 }
 
-/* ── hero word ──────────────────────────────────────────────────────────── */
+/* ── background word — this site's own mono/terminal voice, not the
+   template's decorative italic serif. Large, low-opacity watermark behind
+   the card row, same position/scale role. */
 .bsx-hero-word {
   position: absolute;
   z-index: 1;
-  top: 12vh;
+  top: 13vh;
   left: 50%;
   margin: 0;
-  color: var(--pink);
-  font-size: clamp(128px, 20.5vw, 315px);
-  font-style: italic;
+  color: var(--accent);
+  opacity: .42;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: clamp(84px, 14.5vw, 220px);
+  font-style: normal;
   font-weight: 500;
-  letter-spacing: -.085em;
-  line-height: .84;
+  letter-spacing: -.04em;
+  line-height: .9;
+  text-transform: lowercase;
   white-space: nowrap;
   transform: translate3d(calc(-50% + var(--mx) * -.12), calc(var(--my) * -.12), 0);
   transition: opacity 700ms ease, filter 700ms ease, transform 900ms var(--ease);
@@ -197,255 +170,99 @@
   transform: scale(1.035) rotateX(-1.5deg);
 }
 
-.bsx-book-back,
-.bsx-page-block,
-.bsx-page-fan,
-.bsx-front-cover,
-.bsx-book-shadow {
-  position: absolute;
-  inset: 0;
-  border-radius: 3px 7px 7px 3px;
-}
-
-.bsx-book-shadow {
-  z-index: -2;
-  inset: 5% -4% -2% 4%;
-  border-radius: 12px;
-  background: rgba(24, 18, 10, .7);
-  filter: blur(22px);
-  opacity: .72;
-  transform: translate3d(18px, 28px, -60px);
-}
-
-.bsx-book-back {
-  z-index: 0;
-  background: var(--cover-color);
-  box-shadow: 0 18px 30px rgba(24, 18, 10, .4);
-  transform: translate3d(7px, 1px, -26px);
-}
-
-.bsx-page-block {
-  z-index: 1;
-  inset: 1.7% 1.4% 1.7% 3.8%;
-  overflow: visible;
-  border: 1px solid rgba(84, 68, 45, .25);
-  border-radius: 2px 5px 5px 2px;
-  background:
-    repeating-linear-gradient(0deg, rgba(105, 86, 58, .14) 0, rgba(105, 86, 58, .14) 1px, transparent 1px, transparent 2.8px),
-    linear-gradient(90deg, #cfc1a4 0%, #f2e8d2 14%, #e7dac0 87%, #cbb894 100%);
-  box-shadow: 7px 5px 16px rgba(31, 23, 13, .26);
-  transform: translate3d(7px, 1px, -12px);
-  transition: transform 1100ms var(--ease), inset 1100ms var(--ease);
-}
-
-.bsx-page-block::before {
-  content: "";
-  position: absolute;
-  top: -7px;
-  right: 1px;
-  left: 1px;
-  height: 8px;
-  border-radius: 2px 4px 0 0;
-  background: repeating-linear-gradient(90deg, #d9cbae 0, #d9cbae 2px, #f2e7cf 2px, #f2e7cf 5px);
-  transform: skewX(-8deg);
-  transform-origin: bottom left;
-}
-
-.bsx-page-block::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  right: -7px;
-  width: 8px;
-  height: 100%;
-  border-radius: 0 4px 4px 0;
-  background: repeating-linear-gradient(0deg, #cbb995 0, #cbb995 1px, #eee3cd 1px, #eee3cd 3px);
-  box-shadow: 3px 2px 7px rgba(35, 26, 14, .18);
-  transform: skewY(-2deg);
-  transform-origin: left center;
-}
-
-.bsx-page-fan {
-  z-index: 2;
-  inset: 2.4% 2% 2.4% 4.3%;
-  pointer-events: none;
-  transform-style: preserve-3d;
-}
-
-.bsx-page-fan i {
-  position: absolute;
-  inset: 0;
-  display: block;
-  border: 1px solid rgba(102, 83, 55, .22);
-  border-radius: 2px 5px 5px 2px;
-  background:
-    linear-gradient(90deg, rgba(116, 91, 56, .22), transparent 9%),
-    repeating-linear-gradient(0deg, #f0e6d0 0, #f0e6d0 2px, #e6d8ba 2px, #e6d8ba 3px);
-  box-shadow: 3px 5px 10px rgba(37, 28, 16, .08);
-  opacity: 0;
-  transform: translate3d(0, 0, 0) rotateY(0);
-  transform-origin: 1.5% center;
-  transition: opacity 500ms ease, transform 1200ms var(--ease);
-}
-
+/* ── flat card face: the site's own card language — --panel fill, --border
+   edge, --radius, an elevation shadow so the fanned, overlapping cards read as
+   stacked. No paper texture, no spine, no page edges, no torn badge. The class
+   names are unchanged from the book build so the open-transition rules below
+   still target them. */
 .bsx-front-cover {
+  position: absolute;
+  inset: 0;
   z-index: 3;
   overflow: hidden;
-  border: 1px solid rgba(238, 224, 194, .2);
-  background:
-    radial-gradient(circle at 30% 18%, rgba(255, 252, 240, .5), transparent 55%),
-    repeating-linear-gradient(0deg, rgba(120, 100, 66, .05) 0, rgba(120, 100, 66, .05) 1px, transparent 1px, transparent 3px),
-    linear-gradient(150deg, #f3e9d1 0%, #e8dbbd 46%, #dccba6 100%);
-  box-shadow:
-    0 25px 38px rgba(24, 18, 10, .4),
-    inset -12px 0 18px rgba(0, 0, 0, .16),
-    inset 4px 0 9px rgba(255, 255, 255, .12);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: #3b362a;
+  box-shadow: 0 16px 40px -8px rgba(0, 0, 0, .5), 0 3px 10px rgba(0, 0, 0, .32), inset 0 1px 0 rgba(238, 226, 202, .05);
   transform: translate3d(0, 0, 12px);
   transform-origin: 1.5% center;
   transform-style: preserve-3d;
-  transition: transform 1200ms var(--ease), box-shadow 600ms ease;
+  transition: transform 1200ms var(--ease), box-shadow 400ms ease, border-color 200ms ease;
 }
 
-.bsx-front-cover::before {
-  content: "";
-  position: absolute;
-  z-index: 3;
-  top: 0;
-  bottom: 0;
-  left: 0;
-  width: 5.5%;
-  background: linear-gradient(90deg, rgba(0, 0, 0, .35), rgba(255, 255, 255, .08) 35%, rgba(0, 0, 0, .12) 75%, transparent);
-  mix-blend-mode: multiply;
-  opacity: .8;
+.bsx-book-card:hover .bsx-front-cover,
+.bsx-book-card[data-hovered="true"] .bsx-front-cover,
+.bsx-book-card:focus-visible .bsx-front-cover {
+  border-color: var(--accent);
+  box-shadow: 0 24px 50px -8px rgba(0, 0, 0, .55), 0 0 0 1px var(--accent), 0 0 24px -6px var(--glow-gold);
 }
 
-/* ornate inset frame — a double cream rule in the book's own ink */
-.bsx-front-cover::after {
-  content: "";
-  position: absolute;
-  z-index: 4;
-  inset: 6.5%;
-  border: 1px solid color-mix(in srgb, var(--cover-ink) 42%, transparent);
-  box-shadow:
-    0 0 0 3px color-mix(in srgb, var(--cover-ink) 10%, transparent),
-    inset 0 0 0 3px color-mix(in srgb, var(--cover-ink) 16%, transparent);
-  border-radius: 2px;
-  pointer-events: none;
-}
-
-.bsx-corner {
-  position: absolute;
-  z-index: 5;
-  width: 12%;
-  height: 8.4%;
-  border: 1.5px solid color-mix(in srgb, var(--cover-ink) 46%, transparent);
-  pointer-events: none;
-}
-
-.bsx-corner.tl { top: 4%; left: 4%; border-right: 0; border-bottom: 0; }
-.bsx-corner.tr { top: 4%; right: 4%; border-left: 0; border-bottom: 0; }
-.bsx-corner.bl { bottom: 4%; left: 4%; border-right: 0; border-top: 0; }
-.bsx-corner.br { bottom: 4%; right: 4%; border-left: 0; border-top: 0; }
+.bsx-book-card:focus-visible { outline: 0; }
 
 .bsx-cover-copy {
   position: absolute;
+  inset: 0;
   z-index: 2;
-  inset: 5.8% 7.5% 5.5%;
   display: grid;
   grid-template-rows: auto auto auto minmax(0, 1fr) auto;
-  align-content: start;
-  overflow: hidden;
-  color: var(--cover-ink);
-  text-align: center;
-  text-shadow: 0 1px 0 rgba(241, 226, 196, .24);
+  gap: 9px;
+  padding: 22px 20px;
+  color: var(--foreground);
+  text-align: left;
 }
 
 .bsx-cover-kicker {
-  font-size: clamp(8px, .72vw, 11px);
-  font-style: italic;
-  font-weight: 600;
-  letter-spacing: .16em;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 11px;
+  font-weight: 400;
+  font-style: normal;
+  letter-spacing: .12em;
   text-transform: uppercase;
+  color: var(--muted-foreground);
 }
 
 .bsx-cover-title {
-  margin-top: 6%;
-  font-size: clamp(16px, 1.95vw, 27px);
+  font-family: var(--serif);
+  font-size: clamp(17px, 2vw, 26px);
   font-weight: 600;
-  letter-spacing: -.028em;
-  line-height: 1.05;
+  font-style: normal;
+  letter-spacing: -.02em;
+  line-height: 1.14;
 }
 
 .bsx-cover-subtitle {
-  margin-top: 5%;
-  font-size: clamp(9px, .95vw, 13px);
-  font-style: italic;
-  font-weight: 600;
-  letter-spacing: .02em;
-  opacity: .92;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 400;
+  letter-spacing: .01em;
+  line-height: 1.4;
+  color: var(--muted-foreground);
 }
 
-.bsx-cover-plate {
-  align-self: center;
+.bsx-cover-shot {
+  align-self: stretch;
   display: grid;
   place-items: center;
-  gap: 8px;
-  width: 100%;
-  padding: 14% 0;
-  color: color-mix(in srgb, var(--cover-ink) 62%, transparent);
-  background-image:
-    repeating-linear-gradient(45deg, color-mix(in srgb, var(--cover-ink) 12%, transparent) 0, color-mix(in srgb, var(--cover-ink) 12%, transparent) 1px, transparent 1px, transparent 7px);
-  border-block: 1px solid color-mix(in srgb, var(--cover-ink) 22%, transparent);
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  font-size: clamp(6px, .58vw, 8px);
-  font-style: normal;
-  letter-spacing: .28em;
+  min-height: 0;
+  margin: 4px 0;
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+  color: var(--muted-foreground);
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 9px;
+  letter-spacing: .24em;
   text-transform: uppercase;
 }
 
 .bsx-cover-footer {
   align-self: end;
-  padding-top: 3%;
-  border-top: 1px solid currentColor;
-  font-size: clamp(7px, .62vw, 9px);
-  font-weight: 700;
-  letter-spacing: .14em;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 9.5px;
+  font-weight: 400;
+  letter-spacing: .07em;
   text-transform: uppercase;
-}
-
-.bsx-open-badge {
-  position: absolute;
-  z-index: 6;
-  top: 47%;
-  left: 50%;
-  display: grid;
-  width: 84px;
-  height: 60px;
-  place-items: center;
-  color: #312a21;
-  background: #efe3ca;
-  clip-path: polygon(3% 22%, 10% 8%, 25% 7%, 38% 1%, 51% 6%, 66% 2%, 77% 10%, 92% 11%, 96% 26%, 100% 39%, 95% 52%, 99% 67%, 88% 79%, 83% 93%, 68% 94%, 55% 100%, 42% 94%, 27% 98%, 17% 88%, 4% 84%, 5% 69%, 0 57%, 5% 43%, 1% 34%);
-  font-size: 10px;
-  font-style: italic;
-  font-weight: 700;
-  letter-spacing: .12em;
-  opacity: 0;
-  transform: translate(-50%, -50%) scale(.76) rotate(-3deg);
-  transition: opacity 260ms ease, transform 420ms var(--ease), filter 260ms ease;
-  pointer-events: none;
-}
-
-.bsx-book-card:hover .bsx-open-badge,
-.bsx-book-card[data-hovered="true"] .bsx-open-badge,
-.bsx-book-card:focus-visible .bsx-open-badge {
-  opacity: 1;
-  transform: translate(-50%, -50%) scale(1) rotate(-3deg);
-}
-
-.bsx-book-card:focus-visible { outline: 0; }
-
-.bsx-book-card:focus-visible .bsx-open-badge {
-  filter: drop-shadow(0 7px 12px rgba(29, 22, 14, .34)) drop-shadow(0 0 8px rgba(224, 190, 137, .28));
+  color: var(--muted-foreground);
 }
 
 /* ── detail panel ───────────────────────────────────────────────────────── */
@@ -748,69 +565,6 @@
   border-color: rgba(238, 226, 202, .7);
 }
 
-/* ── blossoms ──────────────────────────────────────────────────────────── */
-.bsx-blossom-field {
-  position: absolute;
-  z-index: 9;
-  inset: 0;
-  overflow: hidden;
-  opacity: 0;
-  transition: opacity 700ms ease 250ms;
-  pointer-events: none;
-}
-
-.bsx-blossom {
-  --blossom-size: 26px;
-  position: absolute;
-  top: -12vh;
-  left: var(--blossom-x);
-  width: var(--blossom-size);
-  height: var(--blossom-size);
-  opacity: .92;
-  transform-style: preserve-3d;
-  animation: bsx-blossom-fall var(--blossom-duration) linear var(--blossom-delay) infinite;
-}
-
-.bsx-blossom i {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 42%;
-  height: 60%;
-  border-radius: 72% 72% 58% 58%;
-  background:
-    radial-gradient(circle at 50% 82%, rgba(187, 103, 108, .9) 0 10%, transparent 11%),
-    linear-gradient(180deg, #f5d8d3 0%, #e6aaa9 74%, #c78184 100%);
-  box-shadow: inset 1px 1px 0 rgba(255, 255, 255, .42);
-  transform-origin: 50% 100%;
-}
-
-.bsx-blossom i:nth-child(1) { transform: translate(-50%, -100%) rotate(0deg); }
-.bsx-blossom i:nth-child(2) { transform: translate(-50%, -100%) rotate(72deg); }
-.bsx-blossom i:nth-child(3) { transform: translate(-50%, -100%) rotate(144deg); }
-.bsx-blossom i:nth-child(4) { transform: translate(-50%, -100%) rotate(216deg); }
-.bsx-blossom i:nth-child(5) { transform: translate(-50%, -100%) rotate(288deg); }
-
-.bsx-blossom::after {
-  content: "";
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 18%;
-  height: 18%;
-  border-radius: 50%;
-  background: #d9b46f;
-  box-shadow: 0 0 0 2px rgba(107, 70, 51, .18);
-  transform: translate(-50%, -50%);
-}
-
-@keyframes bsx-blossom-fall {
-  0%   { transform: translate3d(0, -10vh, 0) rotateX(18deg) rotateZ(var(--blossom-r)); }
-  32%  { transform: translate3d(36px, 34vh, 0) rotateX(154deg) rotateZ(calc(var(--blossom-r) + 126deg)); }
-  68%  { transform: translate3d(-30px, 78vh, 0) rotateX(284deg) rotateZ(calc(var(--blossom-r) + 272deg)); }
-  100% { transform: translate3d(20px, 122vh, 0) rotateX(430deg) rotateZ(calc(var(--blossom-r) + 430deg)); }
-}
-
 /* ── toast ─────────────────────────────────────────────────────────────── */
 .bsx-toast {
   position: absolute;
@@ -847,6 +601,10 @@
   height: 100svh;
   width: 100vw;
   margin: 0;
+  /* modal overlay — opaque again so the page behind is covered */
+  background:
+    radial-gradient(circle at 30% 12%, rgba(120, 108, 82, .1), transparent 40%),
+    linear-gradient(180deg, #2c2820 0%, var(--background) 55%, #211e18 100%);
 }
 
 /* while a book is open the band owns the viewport — fully remove the site's own
@@ -901,25 +659,12 @@ body.bsx-locked .sticky-nav {
   transition-timing-function: cubic-bezier(.2, .78, .2, 1);
 }
 
+/* the "open" reveal — the selected card rotates toward the viewer and lifts as
+   it expands (same transform target and 1200ms timing as the book build). */
 .bsx[data-mode="detail"] .bsx-book-card.selected .bsx-front-cover {
-  box-shadow:
-    25px 26px 44px rgba(29, 21, 11, .34),
-    inset -12px 0 18px rgba(0, 0, 0, .13),
-    inset 4px 0 9px rgba(255, 255, 255, .1);
+  box-shadow: 30px 30px 60px -10px rgba(0, 0, 0, .55), 0 0 0 1px var(--border);
   transform: translate3d(0, 0, 18px) rotateY(-29deg);
 }
-
-.bsx[data-mode="detail"] .bsx-book-card.selected .bsx-page-block {
-  inset: 1.9% 1.5% 1.9% 4.4%;
-  transform: translate3d(6px, 1px, -11px);
-}
-
-.bsx[data-mode="detail"] .bsx-book-card.selected .bsx-page-fan i { opacity: 1; }
-.bsx[data-mode="detail"] .bsx-book-card.selected .bsx-page-fan i:nth-child(1) { transform: translate3d(0, 0, 10px) rotateY(-4deg); }
-.bsx[data-mode="detail"] .bsx-book-card.selected .bsx-page-fan i:nth-child(2) { transform: translate3d(0, 0, 11px) rotateY(-8deg); }
-.bsx[data-mode="detail"] .bsx-book-card.selected .bsx-page-fan i:nth-child(3) { transform: translate3d(0, 0, 12px) rotateY(-12deg); }
-.bsx[data-mode="detail"] .bsx-book-card.selected .bsx-page-fan i:nth-child(4) { transform: translate3d(0, 0, 13px) rotateY(-16deg); }
-.bsx[data-mode="detail"] .bsx-book-card.selected .bsx-open-badge { opacity: 0; }
 
 .bsx[data-mode="detail"] .bsx-detail-panel { opacity: 1; pointer-events: auto; }
 .bsx[data-mode="gallery"] .bsx-detail-panel { transition-duration: 160ms; transition-delay: 0ms; }
@@ -930,7 +675,6 @@ body.bsx-locked .sticky-nav {
   pointer-events: auto;
 }
 
-.bsx[data-mode="detail"] .bsx-blossom-field { opacity: 1; }
 /* the count pill shares the top-right corner with the close button */
 .bsx[data-mode="detail"] .bsx-count { opacity: 0; pointer-events: none; }
 
@@ -1035,5 +779,4 @@ body.bsx-locked .sticky-nav {
     transition-duration: .001ms !important;
     transition-delay: 0ms !important;
   }
-  .bsx-blossom { display: none; }
 }
