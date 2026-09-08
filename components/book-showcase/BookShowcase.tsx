@@ -181,10 +181,12 @@ export function BookShowcase({ projects, demos }: { projects: Project[]; demos: 
   return (
     <section ref={rootRef} id="work" className="bsx" data-mode={mode} aria-label="Selected work">
       <div className="bsx-topbar">
+        <div className="bsx-heading">
+          <p className="section-eyebrow">01 — Projects</p>
+          <h2 className="section-title bsx-title">Projects<span className="accent">.</span></h2>
+        </div>
         <span className="bsx-count">06 Projects</span>
       </div>
-
-      <p className="bsx-hero-word" aria-hidden="true">projects</p>
 
       <div className="bsx-gallery" aria-label="Projects">
         {projects.map((p, i) => (

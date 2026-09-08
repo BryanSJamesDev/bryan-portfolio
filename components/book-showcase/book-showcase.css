@@ -63,21 +63,33 @@
   -webkit-tap-highlight-color: transparent;
 }
 
-/* ── topbar ─────────────────────────────────────────────────────────────── */
+/* ── section heading — the site's shared .section-heading / .section-eyebrow /
+   .section-title system (see globals.css), top-left; the count pill sits
+   opposite. The title is the flagship size — a notch above the other
+   sections — but no longer a towering watermark. */
 .bsx-topbar {
   position: absolute;
   z-index: 50;
-  top: 40px;
+  top: 34px;
   left: 0;
   display: flex;
-  align-items: center;
-  justify-content: flex-end;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
   width: 100%;
   padding: 26px 3.2vw;
   pointer-events: none;
 }
 
+.bsx-heading { max-width: 60vw; }
+
+.bsx-title.section-title {
+  margin: 0;
+  font-size: clamp(46px, 6.4vw, 82px);
+}
+
 .bsx-count {
+  flex: none;
   align-self: flex-start;
   padding: 9px 20px;
   border: 1px solid rgba(61, 49, 35, .18);
@@ -89,30 +101,6 @@
   font-weight: 700;
   letter-spacing: .08em;
   text-transform: uppercase;
-}
-
-/* ── background word — this site's own mono/terminal voice, not the
-   template's decorative italic serif. Large, low-opacity watermark behind
-   the card row, same position/scale role. */
-.bsx-hero-word {
-  position: absolute;
-  z-index: 1;
-  top: 13vh;
-  left: 50%;
-  margin: 0;
-  color: var(--accent);
-  opacity: .42;
-  font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: clamp(84px, 14.5vw, 220px);
-  font-style: normal;
-  font-weight: 500;
-  letter-spacing: -.04em;
-  line-height: .9;
-  text-transform: lowercase;
-  white-space: nowrap;
-  transform: translate3d(calc(-50% + var(--mx) * -.12), calc(var(--my) * -.12), 0);
-  transition: opacity 700ms ease, filter 700ms ease, transform 900ms var(--ease);
-  user-select: none;
 }
 
 /* ── gallery / books ────────────────────────────────────────────────────── */
@@ -625,11 +613,7 @@ body.bsx-locked .sticky-nav {
   pointer-events: none !important;
 }
 
-.bsx[data-mode="detail"] .bsx-hero-word {
-  opacity: 0;
-  filter: blur(16px);
-  transform: translate3d(-50%, -34px, 0) scale(.9);
-}
+.bsx[data-mode="detail"] .bsx-topbar { opacity: 0; pointer-events: none; }
 
 .bsx[data-mode="detail"] .bsx-book-card:not(.selected) {
   opacity: 0;
@@ -675,19 +659,14 @@ body.bsx-locked .sticky-nav {
   pointer-events: auto;
 }
 
-/* the count pill shares the top-right corner with the close button */
-.bsx[data-mode="detail"] .bsx-count { opacity: 0; pointer-events: none; }
-
 /* ── responsive ────────────────────────────────────────────────────────── */
 /* short viewports: scale the fan down and lift it so bottoms clear the fold
    even after the dock-clearance offset at the top */
 @media (min-width: 821px) and (max-height: 880px) {
   .bsx { --bsx-dock-clear: 74px; --bsx-book-scale: .9; --bsx-book-yshift: .9; }
-  .bsx-hero-word { top: 10vh; font-size: clamp(112px, 18vw, 270px); }
 }
 @media (min-width: 821px) and (max-height: 760px) {
   .bsx { --bsx-dock-clear: 70px; --bsx-book-scale: .78; --bsx-book-yshift: .82; }
-  .bsx-hero-word { top: 8vh; }
 }
 
 @media (max-width: 1100px) {
@@ -697,15 +676,15 @@ body.bsx-locked .sticky-nav {
 
 @media (max-width: 820px) {
   .bsx { overflow: visible; }
-  .bsx-topbar { top: 24px; padding: 20px; }
+  .bsx-topbar { position: relative; top: auto; padding: 12vh 20px 0; flex-direction: column; align-items: flex-start; gap: 14px; }
+  .bsx-heading { max-width: none; }
   .bsx-count { padding: 7px 14px; font-size: 11px; }
-  .bsx-hero-word { position: relative; top: auto; left: auto; transform: none; display: block; padding: 12vh 20px 0; font-size: clamp(88px, 24vw, 190px); }
   .bsx-gallery {
     position: relative;
     inset: auto;
     display: flex;
     gap: 18px;
-    padding: 6vh 20px 40px;
+    padding: 3vh 20px 40px;
     overflow-x: auto;
     scroll-snap-type: x mandatory;
     scrollbar-width: none;
@@ -761,7 +740,6 @@ body.bsx-locked .sticky-nav {
     transform: translate3d(0, -10px, 0) rotate(-45deg) scale(.85);
   }
   .bsx[data-mode="detail"] button.bsx-close-button { transform: translate3d(0, 0, 0) rotate(0) scale(1); }
-  .bsx[data-mode="detail"] .bsx-hero-word { display: none; }
   .bsx-detail-scroll { max-height: none; -webkit-mask-image: none; mask-image: none; padding-bottom: 8px; }
   .bsx-detail-title { font-size: clamp(40px, 11vw, 62px); }
   .bsx-action-rail { overflow-x: auto; scrollbar-width: none; }
