@@ -1,26 +1,26 @@
 /* ── Field Manuals book showcase ────────────────────────────────────────────
    A faithful port of ThreeUI's BestsellersBookShowcase
    (canonical source SHA-256 7c1ed1ca4a4c…568138) into a scoped React
-   component. Every selector is prefixed .bsx so the vintage palette and
+   component. Every selector is prefixed .bsx so its own palette and
    type cannot leak into the rest of the (dark / mono) site. The authored
-   values — geometry, easing, timings, the aged-paper build — are preserved;
+   values — geometry, easing, timings, the sage-dark build — are preserved;
    what changed: 3 books → 6, the hero word, cover art → flat placeholder,
    the fixed page chrome is now absolute inside a full-bleed band, and the
    hamburger menu / "collection" ticket are dropped (the site has its own nav). */
 
 .bsx {
-  --ink: #29251d;
-  --ink-deep: #1d1a15;
-  --ink-soft: #3a382b;
-  --pink: #c3a47b;
-  --pink-bright: #dbc39c;
-  --text: #eee2ca;
-  --muted: #c5b79e;
-  --periwinkle: #b7976c;
-  --sage: #89946f;
-  --clay: #a96346;
-  --moss: #5f684f;
-  --paper: #eadfc7;
+  --ink: #28322c;
+  --ink-deep: #1c231e;
+  --ink-soft: #333d36;
+  --pink: #9fbfa2;
+  --pink-bright: #c4d8c2;
+  --text: #e9eee5;
+  --muted: #b8c3b6;
+  --periwinkle: #8fa892;
+  --sage: #7f9082;
+  --clay: #7a8f7c;
+  --moss: #4d5a50;
+  --paper: #dfe5db;
   --serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua",
     Baskerville, Georgia, serif;
   --ease: cubic-bezier(.2, .78, .2, 1);
@@ -92,11 +92,11 @@
   flex: none;
   align-self: flex-start;
   padding: 9px 20px;
-  border: 1px solid rgba(61, 49, 35, .18);
+  border: 1px solid rgba(60, 72, 63, .18);
   border-radius: 999px;
   background: var(--paper);
-  color: #30291f;
-  box-shadow: 0 8px 26px rgba(28, 22, 14, .13);
+  color: #1b231e;
+  box-shadow: 0 8px 26px rgba(10, 16, 12, .13);
   font-size: 12px;
   font-weight: 700;
   letter-spacing: .08em;
@@ -170,8 +170,8 @@
   overflow: hidden;
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  background: #3b362a;
-  box-shadow: 0 16px 40px -8px rgba(0, 0, 0, .5), 0 3px 10px rgba(0, 0, 0, .32), inset 0 1px 0 rgba(238, 226, 202, .05);
+  background: #323d36;
+  box-shadow: 0 16px 40px -8px rgba(0, 0, 0, .5), 0 3px 10px rgba(0, 0, 0, .32), inset 0 1px 0 rgba(224, 233, 222, .05);
   transform: translate3d(0, 0, 12px);
   transform-origin: 1.5% center;
   transform-style: preserve-3d;
@@ -297,24 +297,24 @@
   padding: 0 22px 76px 0;
   -webkit-mask-image: linear-gradient(to bottom, #000 0, #000 calc(100% - 76px), transparent 100%);
   mask-image: linear-gradient(to bottom, #000 0, #000 calc(100% - 76px), transparent 100%);
-  scrollbar-color: rgba(198, 139, 140, .76) rgba(73, 66, 49, .35);
+  scrollbar-color: rgba(150, 182, 156, .76) rgba(58, 68, 60, .35);
   scrollbar-width: thin;
 }
 
 .bsx-detail-scroll:focus-visible {
   border-radius: 8px;
-  outline: 1px solid rgba(231, 184, 185, .7);
+  outline: 1px solid rgba(160, 192, 165, .7);
   outline-offset: 8px;
 }
 
 .bsx-detail-scroll::-webkit-scrollbar { width: 5px; }
-.bsx-detail-scroll::-webkit-scrollbar-track { border-radius: 999px; background: rgba(73, 66, 49, .35); }
-.bsx-detail-scroll::-webkit-scrollbar-thumb { border-radius: 999px; background: rgba(198, 139, 140, .76); }
+.bsx-detail-scroll::-webkit-scrollbar-track { border-radius: 999px; background: rgba(58, 68, 60, .35); }
+.bsx-detail-scroll::-webkit-scrollbar-thumb { border-radius: 999px; background: rgba(150, 182, 156, .76); }
 
 .bsx-doc-section {
   margin-top: 26px;
   padding-top: 22px;
-  border-top: 1px solid rgba(220, 200, 164, .2);
+  border-top: 1px solid rgba(176, 192, 178, .2);
 }
 
 .bsx-doc-label {
@@ -346,7 +346,7 @@
 .bsx-doc-steps li::before {
   content: counter(guide-step, decimal-leading-zero);
   padding-top: 2px;
-  color: rgba(231, 184, 185, .7);
+  color: rgba(160, 192, 165, .7);
   font-size: 12px;
   font-style: italic;
   letter-spacing: .08em;
@@ -355,7 +355,7 @@
 .bsx-doc-step-copy { display: grid; gap: 4px; }
 
 .bsx-doc-step-copy strong {
-  color: #e8dcc4;
+  color: #e2e8de;
   font-size: 15px;
   font-style: italic;
   font-weight: 650;
@@ -370,9 +370,9 @@
 /* ── field-test (the embedded demo slot) ────────────────────────────────── */
 .bsx-field-test {
   padding: 16px 16px 6px;
-  border: 1px solid rgba(220, 200, 164, .2);
+  border: 1px solid rgba(176, 192, 178, .2);
   border-radius: 12px;
-  background: rgba(52, 48, 37, .62);
+  background: rgba(44, 54, 47, .62);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, .035);
 }
 
@@ -388,18 +388,18 @@
 .bsx-field-test .pipelines > div,
 .bsx-field-test .pipeline-node,
 .bsx-field-test .matches li {
-  border-color: rgba(220, 200, 164, .28);
+  border-color: rgba(176, 192, 178, .28);
 }
 .bsx-field-test .search-form,
-.bsx-field-test .field-toggle { background: rgba(35, 32, 24, .5); }
+.bsx-field-test .field-toggle { background: rgba(40, 50, 43, .5); }
 .bsx-field-test .search-form input,
 .bsx-field-test .field-toggle code,
 .bsx-field-test .pipelines strong,
-.bsx-field-test .spread-row { color: #e8dcc4; }
+.bsx-field-test .spread-row { color: #e2e8de; }
 .bsx-field-test .matches strong,
 .bsx-field-test .accent,
 .bsx-field-test a { color: var(--pink-bright); }
-.bsx-field-test .bar-track { background: rgba(73, 66, 49, .5); }
+.bsx-field-test .bar-track { background: rgba(58, 68, 60, .5); }
 .bsx-field-test .bar-track > div { background: var(--pink); }
 .bsx-field-test .flat-line { border-bottom-color: var(--muted); }
 .bsx-field-test input:focus-visible,
@@ -422,7 +422,7 @@
 
 .bsx-tag {
   padding: 3px 10px;
-  border: 1px solid rgba(220, 200, 164, .3);
+  border: 1px solid rgba(176, 192, 178, .3);
   border-radius: 999px;
   color: var(--pink);
   font-size: 11px;
@@ -432,7 +432,7 @@
 
 .bsx-meta-note {
   margin-left: auto;
-  color: #bcae92;
+  color: #a6b2a3;
   font-size: 13px;
   font-style: italic;
   font-weight: 650;
@@ -442,7 +442,7 @@
   height: 1px;
   margin: 10px 8px 14px;
   border: 0;
-  background: rgba(220, 200, 164, .24);
+  background: rgba(176, 192, 178, .24);
 }
 
 .bsx-action-rail {
@@ -452,16 +452,16 @@
   gap: var(--action-inset);
   width: 100%;
   padding: var(--action-inset);
-  border: 1px solid rgba(238, 226, 202, .07);
+  border: 1px solid rgba(224, 233, 222, .07);
   border-radius: 32px;
-  background: rgba(64, 58, 43, .88);
-  box-shadow: 0 16px 32px rgba(26, 20, 12, .2);
+  background: rgba(46, 56, 49, .88);
+  box-shadow: 0 16px 32px rgba(9, 14, 11, .2);
   backdrop-filter: blur(12px);
 }
 
 .bsx a.bsx-pill,
 .bsx button.bsx-pill {
-  color: #2e261d;
+  color: #1b231e;
 }
 
 .bsx-pill {
@@ -475,7 +475,7 @@
   padding: 0 18px;
   border-radius: 24px;
   background: var(--periwinkle);
-  color: #2e261d;
+  color: #1b231e;
   cursor: pointer;
   font-size: 15px;
   font-style: italic;
@@ -495,8 +495,8 @@
   width: 58px;
   min-width: 58px;
   padding: 0;
-  background: #565d45;
-  color: #f1e6cf;
+  background: #4a564d;
+  color: #eaf0e6;
 }
 
 .bsx-pill.icon-only svg {
@@ -532,9 +532,9 @@
   width: 58px;
   height: 58px;
   place-items: center;
-  border: 1px solid rgba(238, 226, 202, .38);
+  border: 1px solid rgba(224, 233, 222, .38);
   border-radius: 50%;
-  background: rgba(28, 25, 20, .92);
+  background: rgba(28, 36, 31, .92);
   color: var(--paper);
   cursor: pointer;
   font-size: 30px;
@@ -549,8 +549,8 @@
 }
 
 .bsx button.bsx-close-button:hover {
-  background: rgba(46, 41, 32, .96);
-  border-color: rgba(238, 226, 202, .7);
+  background: rgba(48, 58, 51, .96);
+  border-color: rgba(224, 233, 222, .7);
 }
 
 /* ── toast ─────────────────────────────────────────────────────────────── */
@@ -563,7 +563,7 @@
   padding: 12px 18px;
   border: 1px solid rgba(255, 255, 255, .14);
   border-radius: 999px;
-  background: rgba(36, 32, 25, .88);
+  background: rgba(38, 46, 40, .88);
   color: var(--paper);
   box-shadow: 0 12px 36px rgba(0, 0, 0, .22);
   font-size: 13px;
@@ -591,8 +591,8 @@
   margin: 0;
   /* modal overlay — opaque again so the page behind is covered */
   background:
-    radial-gradient(circle at 30% 12%, rgba(120, 108, 82, .1), transparent 40%),
-    linear-gradient(180deg, #2c2820 0%, var(--background) 55%, #211e18 100%);
+    radial-gradient(circle at 30% 12%, rgba(150, 168, 150, .1), transparent 40%),
+    linear-gradient(180deg, #313d35 0%, var(--background) 55%, #1f2823 100%);
 }
 
 /* while a book is open the band owns the viewport — fully remove the site's own
