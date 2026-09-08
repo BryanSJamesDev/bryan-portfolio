@@ -66,9 +66,14 @@ export const projects: Project[] = [
     "name": "Order Processing System (OPS)",
     "subtitle": "Real-time order tracking and forecasting",
     "repo": "https://github.com/BryanSJamesDev/-Order-Processing-System-OPS-",
-    "description": "[fill in: specific forecasting method/model used and one concrete result or metric]",
+    "description": "A multi-tab desktop order management system: SQLite-backed order and inventory tracking, email-based order intake that parses incoming Gmail messages via IMAP and sends confirmation/low-stock alerts via SMTP, a random-forest model flagging suspicious orders, and demand forecasting implemented three ways (LSTM, ARIMA, Prophet).",
     "tags": [
-      "[fill in actual stack]"
+      "Python",
+      "Tkinter",
+      "SQLite",
+      "scikit-learn",
+      "Keras",
+      "Prophet"
     ],
     "team": false
   },
