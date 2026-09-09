@@ -383,17 +383,16 @@
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, .035);
 }
 
-/* pull the site's olive/mono demo internals into the paper palette */
+/* keep the demo internals in step with the panel palette */
 .bsx-field-test .demo { border-top: 0; margin-top: 0; padding-top: 0; }
 .bsx-field-test .demo-heading { color: var(--pink); letter-spacing: .1em; }
 .bsx-field-test .demo-heading .hex { background: var(--pink); }
 .bsx-field-test .demo-note,
-.bsx-field-test .matches p,
-.bsx-field-test .pipelines p { color: var(--muted); }
+.bsx-field-test .matches p { color: var(--muted); }
 .bsx-field-test .search-form,
 .bsx-field-test .field-toggle,
-.bsx-field-test .pipelines > div,
-.bsx-field-test .pipeline-node,
+.bsx-field-test .cg-col,
+.bsx-field-test .cg-node,
 .bsx-field-test .matches li {
   border-color: rgba(176, 192, 178, .28);
 }
@@ -401,8 +400,7 @@
 .bsx-field-test .field-toggle { background: rgba(40, 50, 43, .5); }
 .bsx-field-test .search-form input,
 .bsx-field-test .field-toggle code,
-.bsx-field-test .pipelines strong,
-.bsx-field-test .spread-row { color: #e2e8de; }
+.bsx-field-test .pa-step strong { color: #e2e8de; }
 .bsx-field-test .matches strong,
 .bsx-field-test .accent,
 .bsx-field-test a { color: var(--pink-bright); }
