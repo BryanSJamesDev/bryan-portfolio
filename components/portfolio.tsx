@@ -78,7 +78,42 @@ function ContractDemo(){
   <noscript>Static example: the string “125” passes a naive pipeline and is quarantined by an integer contract.</noscript>
  </div>;
 }
-function PricingDemo(){return <div className="demo"><div className="demo-heading"><span className="hex"/> Observed pricing spread</div><div className="spread-row"><span>Steam</span><strong>~{pricing.steamSpreadApproxPercent}%</strong></div><div className="bar-track" role="img" aria-label="Steam: approximately 99 percent regional spread"><div style={{width:`${pricing.steamSpreadApproxPercent}%`}}/></div><div className="spread-row"><span>Amazon</span><strong>Correct negative</strong></div><div className="flat-line" role="img" aria-label="Amazon negative control: roughly flat, no spread"/><p className="demo-note">Reported outcomes from the project. Country-level prices were not supplied, so this shows the verified summary rather than invented regional observations.</p><a className="small" href={links.github+"/parity-agent"} target="_blank" rel="noopener noreferrer">Inspect the pricing experiment ↗</a></div>}
+const REPAIR=[
+ {t:"Scraper returns null",d:"The saved price selector stops matching after the site's markup changes."},
+ {t:"Model relocates the price",d:"A model proposes a new selector for the price element on the live page."},
+ {t:"Validate before trusting",d:"The candidate selector is checked against a known price before it's accepted."},
+ {t:"Persist the fix",d:"The working selector is saved so the next run scrapes cleanly."},
+];
+function PricingDemo(){
+ const [seenRef,seen]=useSeen<HTMLDivElement>();
+ const [fill,setFill]=useState(0);
+ const [step,setStep]=useState(0);
+ const reduce=useRef(false);const raf=useRef(0);
+ const target=pricing.steamSpreadApproxPercent;
+ useEffect(()=>{reduce.current=matchMedia('(prefers-reduced-motion: reduce)').matches;return ()=>cancelAnimationFrame(raf.current);},[]);
+ useEffect(()=>{if(!seen)return;if(reduce.current){setFill(target);return;}
+  const start=performance.now();const dur=900;
+  const tick=(now:number)=>{const k=Math.min(1,(now-start)/dur);setFill(Math.round((1-Math.pow(1-k,3))*target));if(k<1)raf.current=requestAnimationFrame(tick);};
+  raf.current=requestAnimationFrame(tick);},[seen,target]);
+ return <div className="demo" ref={seenRef}>
+  <div className="demo-heading"><span className="hex"/> Reported comparison</div>
+  <div className="pa-row"><span>Steam</span><strong>~{fill}%</strong></div>
+  <div className="bar-track" role="img" aria-label={`Steam: approximately ${target} percent regional spread`}><div style={{width:`${fill}%`}}/></div>
+  <div className="pa-row"><span>Amazon</span><strong>Correct negative</strong></div>
+  <div className="flat-line" role="img" aria-label="Amazon negative control: roughly flat, no spread"/>
+  <p className="demo-note">Reported outcomes from the project. Country-level prices were not supplied, so this shows the verified summary rather than invented regional observations.</p>
+  <div className="pa-walk">
+   <p className="pa-walk-label">Walkthrough — no live scraping in this demo</p>
+   <div className="pa-step" key={step}><span className="pa-step-n">{step+1} / {REPAIR.length}</span><strong>{REPAIR[step].t}</strong><p>{REPAIR[step].d}</p></div>
+   <div className="pa-nav">
+    <button type="button" onClick={()=>setStep(s=>Math.max(0,s-1))} disabled={step===0} aria-label="Previous step">← Prev</button>
+    <div className="pa-dots" aria-hidden="true">{REPAIR.map((_,i)=><span key={i} data-on={i===step}/>)}</div>
+    <button type="button" onClick={()=>setStep(s=>Math.min(REPAIR.length-1,s+1))} disabled={step===REPAIR.length-1} aria-label="Next step">Next →</button>
+   </div>
+  </div>
+  <a className="small" href={links.github+"/parity-agent"} target="_blank" rel="noopener noreferrer">Inspect the pricing experiment ↗</a>
+ </div>;
+}
 const demoFor=(slug:string):ReactNode=>slug==='patent-search'?<PatentDemo/>:slug==='contract-guard'?<ContractDemo/>:slug==='parity-agent'?<PricingDemo/>:null;
 function Work(){return <BookShowcase num={secNum('work')} projects={projects} demos={projects.map(p=>demoFor(p.slug))}/>;}
 function Experience(){return <section className="section narrow" id="experience"><div className="section-heading reveal"><p className="section-eyebrow">{secNum('experience')} — Experience</p><h2 className="section-title">Experience<span className="accent">.</span></h2></div><div className="experience-entry reveal"><div className="experience-header"><div><h3>Software Engineering Intern</h3><p>Infyz Solutions Pvt Ltd</p></div><p className="mono small">Aug 2023 to Jan 2024</p></div><ul className="experience-list"><li>Reduced manual data-entry delays by <strong>30%</strong> (measured by workflow completion time) by building Java-based REST API modules automating the “Inward” and “Issue” workflows on the ITOMS platform.</li><li>Improved cost-control accuracy by <strong>25%</strong> (measured by reporting error rate) by building SQL-based ABC and Aging Analysis reports using JDBC.</li><li>Increased release reliability (measured by reduced sync failures) by building automated alert services and shipping features via Git/Docker-based Agile sprints.</li></ul></div></section>}
