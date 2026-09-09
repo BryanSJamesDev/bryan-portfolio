@@ -1,4 +1,4 @@
-export type Project = { slug: string; name: string; subtitle: string; repo: string; description: string; tags: string[]; team: boolean; image?: string; demoVideo?: string; demoPoster?: string };
+export type Project = { slug: string; name: string; subtitle: string; repo: string; description: string; tags: string[]; team: boolean; image?: string; imageInset?: string; demoVideo?: string; demoPoster?: string };
 export const projects: Project[] = [
   {
     "slug": "agentfirst",
@@ -14,6 +14,8 @@ export const projects: Project[] = [
       "PostgreSQL",
       "MCP"
     ],
+    "image": "/projects/agentfirst.png",
+    "imageInset": "/projects/agentfirst-checkout.png",
     "team": true
   },
   {
@@ -45,6 +47,7 @@ export const projects: Project[] = [
       "MCP",
       "Bright Data"
     ],
+    "image": "/projects/parity-agent.png",
     "team": false
   },
   {
@@ -59,6 +62,8 @@ export const projects: Project[] = [
       "dbt",
       "SQL"
     ],
+    "image": "/projects/contract-guard.png",
+    "imageInset": "/projects/contract-guard-quarantine.png",
     "team": false
   },
   {
@@ -75,6 +80,8 @@ export const projects: Project[] = [
       "Keras",
       "Prophet"
     ],
+    "image": "/projects/ops.png",
+    "imageInset": "/projects/ops-order-entry.png",
     "team": false
   },
   {
@@ -90,6 +97,7 @@ export const projects: Project[] = [
       "Robotics"
     ],
     "team": false,
+    "image": "/projects/robot-perception-action.jpg",
     "demoVideo": "/demos/robot-perception-action.mp4"
   }
 ];

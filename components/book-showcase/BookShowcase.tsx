@@ -291,6 +291,8 @@ export function BookShowcase({ num = "01", projects, demos }: { num?: string; pr
             ref={(el) => { cardRefs.current[i] = el; }}
             type="button"
             className={`bsx-book-card${selected === i ? " selected" : ""}`}
+            data-slug={p.slug}
+            data-active={i === timeline.activeIndex ? "true" : undefined}
             aria-label={label}
             tabIndex={mode === "detail" ? (isOpen && hasVideo ? 0 : -1) : (i === timeline.activeIndex ? 0 : -1)}
             onClick={() => onCardClick(i)}
@@ -302,10 +304,17 @@ export function BookShowcase({ num = "01", projects, demos }: { num?: string; pr
                 <span className="bsx-front-cover">
                   {demos[i] ? <span className="bsx-card-try">Try it</span> : null}
                   <span className="bsx-cover-copy">
-                    {p.image ? <img className="timeline-project-image" src={p.image} alt="" loading="lazy" /> : null}
                     <span className="bsx-cover-kicker">Project {num2(i + 1)}</span>
                     <span className="bsx-cover-title">{p.name}</span>
                     <span className="bsx-cover-subtitle">{p.subtitle}</span>
+                    <span className="bsx-cover-media">
+                      {p.image ? (
+                        <>
+                          <img className="bsx-cover-shot" src={p.image} alt="" loading="lazy" />
+                          {p.imageInset ? <img className="bsx-cover-shot bsx-cover-shot--inset" src={p.imageInset} alt="" loading="lazy" /> : null}
+                        </>
+                      ) : <span className="bsx-cover-rule" />}
+                    </span>
                     <span className="bsx-cover-footer">{p.tags.filter((t) => !t.startsWith("[")).slice(0, 3).join(" · ") || "Repo"}</span>
                   </span>
                   {hasVideo ? <span className="bsx-card-flip-hint">▶ Watch demo</span> : null}

@@ -197,8 +197,10 @@
 .bsx-book-card:hover .bsx-front-cover,
 .bsx-book-card[data-hovered="true"] .bsx-front-cover,
 .bsx-book-card:focus-visible .bsx-front-cover {
-  border-color: var(--accent);
-  box-shadow: 0 24px 50px -8px rgba(0, 0, 0, .55), 0 0 0 1px var(--accent), 0 0 24px -6px var(--glow-gold);
+  border-color: color-mix(in srgb, var(--card-accent, var(--accent)) 70%, transparent);
+  box-shadow:
+    0 26px 54px -10px rgba(0, 0, 0, .5),
+    0 0 0 1px color-mix(in srgb, var(--card-accent, var(--accent)) 45%, transparent);
 }
 
 .bsx-book-card:focus-visible { outline: 0; }
@@ -337,11 +339,65 @@
   inset: 0;
   z-index: 2;
   display: grid;
-  grid-template-rows: auto auto 1fr auto;
+  grid-template-rows: auto auto auto 1fr auto;
   gap: 9px;
   padding: 22px 20px;
   color: var(--foreground);
   text-align: left;
+}
+
+/* screenshot slot — the card's main visual. A real crop from data/projects.ts
+   `image` renders as `.bsx-cover-shot` (with an optional smaller `--inset` for a
+   supporting crop); with no image the card stays typographic (`.bsx-cover-rule`).
+   Its own transform layer, so the hover zoom never fights the gallery's outer
+   card transforms. */
+.bsx-cover-media {
+  position: relative;
+  min-height: 0;
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transform-origin: center;
+  transition: transform 240ms var(--ease);
+}
+
+/* each screenshot sits on a faint mat in the card's own colour, so any aspect
+   ratio (a wide chart, a tall panel) reads as a framed capture, not a crop */
+.bsx-cover-shot {
+  width: 100%;
+  min-height: 0;
+  flex: 1 1 auto;
+  object-fit: contain;
+  object-position: center;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--card-bg, #323d36) 88%, #000);
+  border: 1px solid color-mix(in srgb, var(--card-accent, var(--border)) 26%, transparent);
+  box-shadow: 0 3px 12px rgba(0, 0, 0, .2);
+}
+
+.bsx-cover-shot--inset {
+  flex: 0 0 37%;
+  width: 70%;
+  align-self: flex-end;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, .28);
+}
+
+/* the robot card is a photo, the OPS dashboard a sparse strip — both read better
+   filling the frame than letterboxed */
+.bsx-book-card[data-slug="robot-pipeline"] .bsx-cover-shot,
+.bsx-book-card[data-slug="ops"] .bsx-cover-shot:not(.bsx-cover-shot--inset) {
+  object-fit: cover;
+  object-position: center;
+}
+.bsx-book-card[data-slug="robot-pipeline"] .bsx-cover-shot { background: none; }
+
+.bsx-cover-rule {
+  align-self: start;
+  width: 38px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--card-accent, var(--accent));
 }
 
 .bsx-cover-kicker {
@@ -1019,13 +1075,66 @@ body.bsx-locked .sticky-nav {
 }
 
 .project-timeline .bsx-title.section-title { font-size: clamp(30px, 3.6vw, 46px); }
-.project-timeline .bsx-front-cover { background: linear-gradient(152deg, #3b4941 0%, #2a342d 72%); }
 .project-timeline .bsx-cover-copy { padding: clamp(18px, 2vw, 28px); gap: 12px; }
 .project-timeline .bsx-cover-title { font-size: clamp(20px, 2.3vw, 30px); overflow-wrap: anywhere; }
 
-/* optional real screenshot from data/projects.ts `image` — none populated today */
-.timeline-project-image { width: 100%; height: 114px; object-fit: cover; border-radius: 6px; grid-row: 1; }
-.bsx-cover-copy:has(.timeline-project-image) { grid-template-rows: 114px auto auto 1fr auto; }
+/* ── per-project colour ──────────────────────────────────────────────────────
+   Each card carries its own muted palette (keyed by data-slug, not nth-child) so
+   it stands out against the sage page. Only the card surface + its text/badges
+   are recoloured; screenshots keep their own colour, and the right-hand detail
+   panel keeps the site theme. */
+.bsx-book-card[data-slug="agentfirst"]     { --card-bg: #E8E1D5; --card-text: #25282C; --card-text-2: #52504B; --card-accent: #66523B; }
+.bsx-book-card[data-slug="patent-search"]  { --card-bg: #B8C9D6; --card-text: #182C40; --card-text-2: #354B5C; --card-accent: #294E70; }
+.bsx-book-card[data-slug="parity-agent"]   { --card-bg: #8B4B32; --card-text: #FFF5EB; --card-text-2: #EAD5C7; --card-accent: #FFD49A; }
+.bsx-book-card[data-slug="contract-guard"] { --card-bg: #182C40; --card-text: #F1F4F7; --card-text-2: #BAC9D6; --card-accent: #8BD3E6; }
+.bsx-book-card[data-slug="ops"]            { --card-bg: #C6BED7; --card-text: #30283F; --card-text-2: #50465F; --card-accent: #60477E; }
+.bsx-book-card[data-slug="robot-pipeline"] { --card-bg: #25282C; --card-text: #F2EDE4; --card-text-2: #C6C0B7; --card-accent: #E4B36A; }
+
+.project-timeline .bsx-front-cover {
+  background: var(--card-bg, #323d36);
+  border-color: color-mix(in srgb, var(--card-accent, var(--border)) 34%, var(--card-bg, var(--border)));
+}
+.project-timeline .bsx-cover-copy,
+.project-timeline .bsx-cover-title { color: var(--card-text, var(--foreground)); }
+.project-timeline .bsx-cover-kicker,
+.project-timeline .bsx-cover-subtitle,
+.project-timeline .bsx-cover-footer { color: var(--card-text-2, var(--muted-foreground)); }
+
+.project-timeline .bsx-card-try {
+  color: var(--card-accent, var(--accent));
+  border-color: color-mix(in srgb, var(--card-accent, var(--accent)) 55%, transparent);
+}
+
+/* the flip-back-to-front hint pill rides the card palette instead of the sage one */
+.project-timeline .bsx-card-flip-hint {
+  background: color-mix(in srgb, var(--card-text, #141815) 84%, transparent);
+  color: var(--card-bg, var(--accent));
+  border-color: color-mix(in srgb, var(--card-accent, var(--accent)) 50%, transparent);
+}
+
+/* depth: the centred card is fully opaque with a brighter project-coloured edge
+   and a deeper shadow; neighbours keep their colour and recede through the
+   gallery's own scale / perspective (opacity floor is raised in the hook). */
+.project-timeline .bsx-front-cover {
+  box-shadow: 0 20px 46px -14px rgba(0, 0, 0, .42), 0 4px 12px rgba(0, 0, 0, .26);
+}
+.project-timeline .bsx-book-card[data-active="true"] .bsx-front-cover {
+  border-color: color-mix(in srgb, var(--card-accent, var(--accent)) 62%, #ffffff 8%);
+  box-shadow:
+    0 44px 96px -22px rgba(0, 0, 0, .5),
+    0 0 0 1px color-mix(in srgb, var(--card-accent, var(--accent)) 28%, transparent);
+}
+
+/* hover / keyboard focus: a small zoom on the media wrapper only */
+.project-timeline .bsx-book-card:hover .bsx-cover-media,
+.project-timeline .bsx-book-card:focus-visible .bsx-cover-media {
+  transform: scale(1.02);
+}
+@media (prefers-reduced-motion: reduce) {
+  .project-timeline .bsx-cover-media { transition: none; }
+  .project-timeline .bsx-book-card:hover .bsx-cover-media,
+  .project-timeline .bsx-book-card:focus-visible .bsx-cover-media { transform: none; }
+}
 
 /* desktop, motion allowed: the pinned perspective row */
 @media (min-width: 821px) and (prefers-reduced-motion: no-preference) {

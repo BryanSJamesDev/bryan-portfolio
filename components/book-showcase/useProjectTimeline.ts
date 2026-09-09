@@ -74,7 +74,7 @@ export function useProjectTimeline(count: number, paused: boolean) {
         card.style.transform =
           `translate(-50%, -50%) translate3d(${delta * spacing}px, ${Math.min(dist, 3) * 26}px, ${-Math.min(dist, 4) * 175}px)` +
           ` rotateY(${yaw}deg) scale(${1 - Math.min(dist, 3) * 0.07})`;
-        card.style.opacity = String(Math.max(0.14, 1 - dist * 0.32));
+        card.style.opacity = String(Math.max(0.72, 1 - dist * 0.12));
         card.style.zIndex = String(20 - Math.round(dist * 3));
         card.style.visibility = dist > 3 ? "hidden" : "visible";
         card.style.pointerEvents = dist > 2 ? "none" : "auto";
