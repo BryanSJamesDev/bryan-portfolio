@@ -1,4 +1,4 @@
-export type Project = { slug: string; name: string; subtitle: string; repo: string; description: string; tags: string[]; team: boolean; image?: string };
+export type Project = { slug: string; name: string; subtitle: string; repo: string; description: string; tags: string[]; team: boolean; image?: string; demoVideo?: string; demoPoster?: string };
 export const projects: Project[] = [
   {
     "slug": "agentfirst",
@@ -89,6 +89,7 @@ export const projects: Project[] = [
       "lerobot",
       "Robotics"
     ],
-    "team": false
+    "team": false,
+    "demoVideo": "/demos/robot-perception-action.mp4"
   }
 ];

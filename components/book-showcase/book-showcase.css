@@ -158,6 +158,27 @@
   transform: scale(1.035) rotateX(-1.5deg);
 }
 
+/* flip pivot: carries the front ⇄ video-demo rotation (transform) and, in the
+   detail view, a slow levitation (translate — a separate property, so it never
+   collides with the flip here or the pointer-tilt on .bsx-book above). */
+.bsx-book-inner {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  transition: transform 720ms var(--ease);
+}
+
+.bsx[data-flipped="true"] .bsx-book-card.selected .bsx-book-inner {
+  transform: rotateY(180deg);
+}
+
+@keyframes bsx-levitate {
+  0%, 100% { translate: 0 0; }
+  50% { translate: 0 -16px; }
+}
+
 /* ── flat card face: the site's own card language — --panel fill, --border
    edge, --radius, an elevation shadow so the fanned, overlapping cards read as
    stacked. No paper texture, no spine, no page edges, no torn badge. The class
@@ -175,6 +196,7 @@
   transform: translate3d(0, 0, 12px);
   transform-origin: 1.5% center;
   transform-style: preserve-3d;
+  backface-visibility: hidden;
   transition: transform 600ms var(--ease), box-shadow 360ms ease, border-color 200ms ease;
 }
 
@@ -186,6 +208,94 @@
 }
 
 .bsx-book-card:focus-visible { outline: 0; }
+
+/* ── video-demo face: the reverse of the open card, revealed by the flip ──────── */
+.bsx-back-cover {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: #14181580;
+  background-color: #141815;
+  box-shadow: 0 16px 40px -8px rgba(0, 0, 0, .5), 0 3px 10px rgba(0, 0, 0, .32);
+  transform: rotateY(180deg) translateZ(12px);
+  backface-visibility: hidden;
+}
+
+.bsx-demo-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.bsx-demo-play {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 62px;
+  height: 62px;
+  padding-left: 4px;
+  border: 1px solid rgba(224, 233, 222, .55);
+  border-radius: 999px;
+  background: rgba(20, 26, 22, .58);
+  color: var(--paper);
+  font-size: 20px;
+  transition: opacity 200ms ease, transform 200ms ease;
+}
+
+.bsx-back-cover[data-playing="true"] .bsx-demo-play {
+  opacity: 0;
+  transform: scale(.7);
+}
+
+.bsx-demo-missing {
+  position: relative;
+  z-index: 2;
+  padding: 8px 12px;
+  color: var(--muted);
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 9.5px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+
+/* front-face hint that the card turns over — sits in the open card's empty
+   middle like a play badge on a thumbnail (detail view + a project with a video) */
+.bsx-card-flip-hint {
+  position: absolute;
+  left: 50%;
+  top: 52%;
+  z-index: 4;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 16px 8px;
+  transform: translate(-50%, -50%) scale(.92);
+  border: 1px solid color-mix(in srgb, var(--accent) 55%, transparent);
+  border-radius: 999px;
+  background: rgba(20, 26, 22, .62);
+  color: var(--accent);
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 9.5px;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 320ms ease 220ms, transform 320ms var(--ease) 220ms;
+}
+
+.bsx[data-mode="detail"] .bsx-book-card.selected .bsx-card-flip-hint {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+}
+.bsx[data-flipped="true"] .bsx-book-card.selected .bsx-card-flip-hint { opacity: 0; transition-delay: 0ms; }
 
 .bsx-cover-copy {
   position: absolute;
@@ -334,6 +444,34 @@
   font-size: 12px;
   line-height: 1.5;
 }
+
+/* keyboard-reachable twin of the card flip — lives in the detail panel */
+.bsx button.bsx-demo-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 18px 0 4px;
+  padding: 10px 16px;
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  border-radius: 999px;
+  background: rgba(159, 191, 162, .1);
+  color: var(--pink-bright);
+  cursor: pointer;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 11px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  transition: background 200ms ease, border-color 200ms ease;
+}
+
+.bsx button.bsx-demo-cta:hover {
+  background: rgba(159, 191, 162, .18);
+  border-color: var(--accent);
+}
+
+/* desktop turns the card over for the demo; the inline player is the narrow-screen
+   fallback (the gallery — and the card with it — is display:none under 820px) */
+.bsx-demo-inline { display: none; }
 
 .bsx-doc-steps {
   display: grid;
@@ -560,6 +698,40 @@
   border-color: rgba(224, 233, 222, .7);
 }
 
+/* ── flip-back control — a sibling of the card (nested buttons are invalid), sits
+   over the top of the turned card; only present while flipped ──────────────── */
+.bsx button.bsx-flip-back {
+  position: absolute;
+  z-index: 56;
+  top: 9svh;
+  left: 27%;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 16px;
+  transform: translateX(-50%);
+  border: 1px solid rgba(224, 233, 222, .38);
+  border-radius: 999px;
+  background: rgba(28, 36, 31, .92);
+  color: var(--paper);
+  cursor: pointer;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 11px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, .4);
+  backdrop-filter: blur(8px);
+}
+
+.bsx button.bsx-flip-back:hover {
+  background: rgba(48, 58, 51, .96);
+  border-color: rgba(224, 233, 222, .7);
+}
+
+@media (max-width: 1100px) {
+  .bsx button.bsx-flip-back { left: 22%; }
+}
+
 /* ── toast ─────────────────────────────────────────────────────────────── */
 .bsx-toast {
   position: absolute;
@@ -622,6 +794,12 @@ body.bsx-locked .sticky-nav {
 
 .bsx[data-mode="detail"] .bsx-topbar { opacity: 0; pointer-events: none; }
 
+/* the gallery is a z-index:5 stacking context, so a card can never rise above the
+   z-index:8 scrim from inside it — lift the whole layer over the scrim in detail
+   mode and make it click-through, so empty space still closes via the scrim but
+   the open card itself (pointer-events re-enabled below) catches its own clicks. */
+.bsx[data-mode="detail"] .bsx-gallery { z-index: 10; pointer-events: none; }
+
 .bsx[data-mode="detail"] .bsx-book-card:not(.selected) {
   opacity: 0;
   filter: blur(10px);
@@ -633,28 +811,38 @@ body.bsx-locked .sticky-nav {
   --hover-y: 0px;
   --local-x: 0px;
   --local-y: 0px;
-  --detail-yaw: -5deg;
+  --detail-yaw: 0deg;
   --detail-pitch: 0deg;
   left: 27%;
   top: 50%;
   width: min(30vw, 415px);
   z-index: 14;
-  cursor: default;
-  transform: translate3d(-50%, -50%, 0) rotate(-3deg);
-  pointer-events: none;
+  cursor: pointer;
+  transform: translate3d(-50%, -50%, 0) rotate(-2deg);
+  pointer-events: auto;
 }
 
+/* pointer-reactive tilt — small, and centred on 0 so the card reads front-on */
 .bsx[data-mode="detail"] .bsx-book-card.selected .bsx-book {
-  transform: scale(1.02) rotateX(var(--detail-pitch)) rotateY(var(--detail-yaw));
-  transition-duration: 170ms;
+  transform: scale(1.03) rotateX(var(--detail-pitch)) rotateY(var(--detail-yaw));
+  transition-duration: 220ms;
   transition-timing-function: cubic-bezier(.2, .78, .2, 1);
 }
 
-/* the "open" reveal — the selected card rotates toward the viewer and lifts as
-   it expands (same transform target and 1200ms timing as the book build). */
+/* the open card floats front-on: a deep cast shadow + the levitation on
+   .bsx-book-inner. No yaw — it faces the viewer squarely. */
+.bsx[data-mode="detail"] .bsx-book-card.selected .bsx-book-inner {
+  animation: bsx-levitate 7s ease-in-out infinite;
+}
+
 .bsx[data-mode="detail"] .bsx-book-card.selected .bsx-front-cover {
-  box-shadow: 30px 30px 60px -10px rgba(0, 0, 0, .55), 0 0 0 1px var(--border);
-  transform: translate3d(0, 0, 18px) rotateY(-29deg);
+  box-shadow: 36px 46px 92px -22px rgba(0, 0, 0, .6), 0 0 0 1px var(--border);
+  transform: translate3d(0, 0, 22px);
+}
+
+/* while flipped the pointer-tilt is dropped so the video sits flat */
+.bsx[data-flipped="true"] .bsx-book-card.selected .bsx-book {
+  transform: scale(1.03);
 }
 
 .bsx[data-mode="detail"] .bsx-detail-panel { opacity: 1; pointer-events: auto; }
@@ -753,6 +941,19 @@ body.bsx-locked .sticky-nav {
   .bsx-action-rail::-webkit-scrollbar { display: none; }
   .bsx-pill { min-width: 128px; }
   .bsx-pill.icon-only { min-width: 58px; }
+
+  .bsx button.bsx-demo-cta,
+  .bsx button.bsx-flip-back { display: none; }
+  .bsx-demo-inline {
+    display: block;
+    width: 100%;
+    margin: 16px 0 4px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: #141815;
+    aspect-ratio: 16 / 10;
+    object-fit: cover;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

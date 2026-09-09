@@ -217,6 +217,10 @@
    particle overlay sits above page content but below this site's fixed nav and
    utilities. Applied to section h2s + project h3s only (see components/portfolio.tsx). */
 #ps-output{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:15}
+/* a project detail view is a full-viewport modal that lives inside <main> (z-index:1),
+   so this root-level overlay outranks it and would paint the page's About / Experience
+   text straight over the open project — pull it out of paint while one is open. */
+body.bsx-locked #ps-output{visibility:hidden}
 
 /* ── cursor dust — ambient motes off the pointer (adapted from Sylva's cursor
    spray; components/cursor-dust). Canvas 2D, not WebGL: no persistent GPU

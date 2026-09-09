@@ -59,6 +59,9 @@ export function BookShowcase({ num = "01", projects, demos }: { num?: string; pr
   const [selected, setSelected] = useState<number | null>(null);
   const [saved, setSaved] = useState<Record<string, boolean>>({});
   const [toast, setToast] = useState<string | null>(null);
+  const [flipped, setFlipped] = useState(false);
+  const [videoState, setVideoState] = useState<"idle" | "playing" | "missing">("idle");
+  const videoRef = useRef<HTMLVideoElement>(null);
 
   /* the bookmark state persists across visits (no list view yet, but the
      toggle means something) */
@@ -93,16 +96,17 @@ export function BookShowcase({ num = "01", projects, demos }: { num?: string; pr
     if (mode === "detail" && selected !== null) {
       const card = cardRefs.current[selected];
       if (!card) return;
+      if (flipped) { card.style.setProperty("--detail-yaw", "0deg"); card.style.setProperty("--detail-pitch", "0deg"); return; }
       const b = card.getBoundingClientRect();
       const cx = b.left + b.width / 2;
       const cy = b.top + b.height / 2;
       const inView = p.clientX >= 0 && p.clientX <= window.innerWidth && p.clientY >= 0 && p.clientY <= window.innerHeight;
       const reachX = p.clientX < cx ? Math.max(cx, 1) : Math.max(window.innerWidth - cx, 1);
       const reachY = p.clientY < cy ? Math.max(cy, 1) : Math.max(window.innerHeight - cy, 1);
-      const vx = inView ? Math.max(-1, Math.min(1, (p.clientX - cx) / reachX)) : -5 / 16;
+      const vx = inView ? Math.max(-1, Math.min(1, (p.clientX - cx) / reachX)) : 0;
       const vy = inView ? Math.max(-1, Math.min(1, (p.clientY - cy) / reachY)) : 0;
-      card.style.setProperty("--detail-yaw", `${vx * 16}deg`);
-      card.style.setProperty("--detail-pitch", `${vy * -10}deg`);
+      card.style.setProperty("--detail-yaw", `${vx * 10}deg`);
+      card.style.setProperty("--detail-pitch", `${vy * -7}deg`);
       return;
     }
 
@@ -115,7 +119,7 @@ export function BookShowcase({ num = "01", projects, demos }: { num?: string; pr
       card.style.setProperty("--local-x", `${p.x * 15 * depth}px`);
       card.style.setProperty("--local-y", `${p.y * 9 * depth}px`);
     });
-  }, [mode, selected]);
+  }, [mode, selected, flipped]);
 
   useEffect(() => {
     const onMove = (e: PointerEvent) => {
@@ -144,7 +148,7 @@ export function BookShowcase({ num = "01", projects, demos }: { num?: string; pr
     setSelected(i);
     setMode("detail");
     const card = cardRefs.current[i];
-    card?.style.setProperty("--detail-yaw", "-5deg");
+    card?.style.setProperty("--detail-yaw", "0deg");
     card?.style.setProperty("--detail-pitch", "0deg");
     window.setTimeout(() => closeRef.current?.focus({ preventScroll: true }), reduced.current ? 0 : 560);
   }, []);
@@ -152,6 +156,26 @@ export function BookShowcase({ num = "01", projects, demos }: { num?: string; pr
   const closeDetail = useCallback(() => {
     setMode((m) => (m === "detail" ? "gallery" : m));
   }, []);
+
+  /* the flip + its video are per-open state — reset whenever the open card
+     changes or the detail view closes */
+  useEffect(() => {
+    setFlipped(false);
+    setVideoState("idle");
+    const v = videoRef.current;
+    if (v) { v.pause(); try { v.currentTime = 0; } catch { /* not loaded yet */ } }
+  }, [selected, mode]);
+
+  const onCardClick = useCallback((i: number) => {
+    if (mode === "gallery") { openBook(i); return; }
+    if (selected !== i) return;
+    if (!projects[i].demoVideo) { closeDetail(); return; }
+    if (!flipped) { setFlipped(true); return; }
+    const v = videoRef.current;
+    if (!v || videoState === "missing") return;
+    if (v.paused) v.play().then(() => setVideoState("playing")).catch(() => { /* autoplay blocked / no source */ });
+    else { v.pause(); setVideoState("idle"); }
+  }, [mode, selected, flipped, videoState, projects, openBook, closeDetail]);
 
   /* after the close transition, return focus to the card and drop the selection */
   useEffect(() => {
@@ -185,7 +209,7 @@ export function BookShowcase({ num = "01", projects, demos }: { num?: string; pr
   const activeTags = active ? active.tags.filter((t) => !t.startsWith("[")) : [];
 
   return (
-    <section ref={rootRef} id="work" className="bsx" data-mode={mode} aria-label="Selected work">
+    <section ref={rootRef} id="work" className="bsx" data-mode={mode} data-flipped={flipped ? "true" : undefined} aria-label="Selected work">
       <div className="bsx-topbar">
         <div className="bsx-heading">
           <p className="section-eyebrow">{num} — Projects</p>
@@ -195,36 +219,69 @@ export function BookShowcase({ num = "01", projects, demos }: { num?: string; pr
       </div>
 
       <div className="bsx-gallery" aria-label="Projects">
-        {projects.map((p, i) => (
+        {projects.map((p, i) => {
+          const isOpen = mode === "detail" && selected === i;
+          const hasVideo = Boolean(p.demoVideo);
+          const label = mode === "gallery"
+            ? `Open ${p.name} details${demos[i] ? " — includes an interactive demo" : ""}`
+            : isOpen && hasVideo
+              ? !flipped
+                ? `Turn the ${p.name} card over to its video demo`
+                : videoState === "playing"
+                  ? `Pause the ${p.name} demo video`
+                  : `Play the ${p.name} demo video`
+              : `${p.name} details`;
+          return (
           <button
             key={p.slug}
             ref={(el) => { cardRefs.current[i] = el; }}
             type="button"
             className={`bsx-book-card${selected === i ? " selected" : ""}`}
-            aria-label={`Open ${p.name} details${demos[i] ? " — includes an interactive demo" : ""}`}
-            tabIndex={mode === "detail" ? -1 : 0}
-            onClick={() => mode === "gallery" && openBook(i)}
+            aria-label={label}
+            tabIndex={mode === "detail" ? (isOpen && hasVideo ? 0 : -1) : 0}
+            onClick={() => onCardClick(i)}
             onPointerEnter={(e) => (e.currentTarget.dataset.hovered = "true")}
             onPointerLeave={(e) => (e.currentTarget.dataset.hovered = "false")}
             style={{
               // @ts-expect-error custom properties
               "--x": FAN.x[i], "--y": FAN.y[i], "--w": FAN.w[i],
-              "--r": FAN.r[i], "--yaw": FAN.yaw[i], zIndex: FAN.z[i],
+              "--r": FAN.r[i], "--yaw": FAN.yaw[i], zIndex: selected === i ? 11 : FAN.z[i],
             }}
           >
             <span className="bsx-book" aria-hidden="true">
-              <span className="bsx-front-cover">
-                {demos[i] ? <span className="bsx-card-try">Try it</span> : null}
-                <span className="bsx-cover-copy">
-                  <span className="bsx-cover-kicker">Project {NUM[i]}</span>
-                  <span className="bsx-cover-title">{p.name}</span>
-                  <span className="bsx-cover-subtitle">{p.subtitle}</span>
-                  <span className="bsx-cover-footer">{p.tags.filter((t) => !t.startsWith("[")).slice(0, 3).join(" · ") || "Repo"}</span>
+              <span className="bsx-book-inner">
+                <span className="bsx-front-cover">
+                  {demos[i] ? <span className="bsx-card-try">Try it</span> : null}
+                  <span className="bsx-cover-copy">
+                    <span className="bsx-cover-kicker">Project {NUM[i]}</span>
+                    <span className="bsx-cover-title">{p.name}</span>
+                    <span className="bsx-cover-subtitle">{p.subtitle}</span>
+                    <span className="bsx-cover-footer">{p.tags.filter((t) => !t.startsWith("[")).slice(0, 3).join(" · ") || "Repo"}</span>
+                  </span>
+                  {hasVideo ? <span className="bsx-card-flip-hint">▶ Watch demo</span> : null}
                 </span>
+                {hasVideo && isOpen ? (
+                  <span className="bsx-back-cover" data-playing={videoState === "playing" ? "true" : undefined}>
+                    <video
+                      ref={videoRef}
+                      className="bsx-demo-video"
+                      src={p.demoVideo}
+                      poster={p.demoPoster}
+                      playsInline
+                      preload="metadata"
+                      onEnded={() => setVideoState("idle")}
+                      onError={() => setVideoState("missing")}
+                    />
+                    {videoState === "missing"
+                      ? <span className="bsx-demo-missing">Demo video coming soon</span>
+                      : <span className="bsx-demo-play">▶</span>}
+                  </span>
+                ) : null}
               </span>
             </span>
           </button>
-        ))}
+          );
+        })}
       </div>
 
       <div className="bsx-scrim" aria-hidden="true" onClick={closeDetail} />
@@ -233,6 +290,24 @@ export function BookShowcase({ num = "01", projects, demos }: { num?: string; pr
         <h3 className="bsx-detail-title">{active?.name}</h3>
         <div className="bsx-detail-scroll" tabIndex={0} aria-label={`${active?.name ?? "Project"} detail`}>
           <p className="bsx-detail-description">{active?.description}</p>
+
+          {active?.demoVideo ? (
+            <button type="button" className="bsx-demo-cta" onClick={() => setFlipped((f) => !f)}>
+              {flipped ? "↩ Back to project details" : "▶ Watch the video demo"}
+            </button>
+          ) : null}
+
+          {/* narrow screens have no flippable card — the demo plays inline instead */}
+          {active?.demoVideo ? (
+            <video
+              className="bsx-demo-inline"
+              src={active.demoVideo}
+              poster={active.demoPoster}
+              controls
+              playsInline
+              preload="none"
+            />
+          ) : null}
 
           {activeDemo ? (
             <section className="bsx-doc-section" aria-label="Try it">
@@ -298,6 +373,10 @@ export function BookShowcase({ num = "01", projects, demos }: { num?: string; pr
       </section>
 
       <button ref={closeRef} className="bsx-close-button" type="button" aria-label="Close detail view" tabIndex={mode === "detail" ? 0 : -1} onClick={closeDetail}>×</button>
+
+      {mode === "detail" && flipped ? (
+        <button type="button" className="bsx-flip-back" onClick={() => setFlipped(false)}>↩ Back to card</button>
+      ) : null}
 
       <div className="bsx-toast" role="status" aria-live="polite" data-show={toast ? "true" : "false"}>{toast}</div>
     </section>
