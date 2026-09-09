@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import type { Project } from "@/data/projects";
 import "./book-showcase.css";
+import { useProjectTimeline } from "./useProjectTimeline";
 
 /* How each project works — written from its real description + stack in
    data/projects.ts, not invented. Projects with nothing substantive to say
@@ -40,19 +41,7 @@ const STEPS: Record<string, { title: string; body: string }[]> = {
   ],
 };
 
-const FAN = {
-  x: ["14%", "27.5%", "41.5%", "58.5%", "72.5%", "86%"],
-  y: ["44%", "38%", "33%", "33%", "38%", "44%"],
-  w: [
-    "min(15vw, 200px)", "min(16.5vw, 222px)", "min(17.5vw, 238px)",
-    "min(17.5vw, 238px)", "min(16.5vw, 222px)", "min(15vw, 200px)",
-  ],
-  r: ["-13deg", "-8deg", "-2deg", "2deg", "8deg", "13deg"],
-  yaw: ["-12deg", "-8deg", "-3deg", "3deg", "8deg", "12deg"],
-  z: [1, 3, 5, 6, 4, 2],
-};
-
-const NUM = ["01", "02", "03", "04", "05", "06"];
+const num2 = (n: number) => String(n).padStart(2, "0");
 
 export function BookShowcase({ num = "01", projects, demos }: { num?: string; projects: Project[]; demos: ReactNode[] }) {
   const [mode, setMode] = useState<"gallery" | "detail">("gallery");
@@ -63,15 +52,17 @@ export function BookShowcase({ num = "01", projects, demos }: { num?: string; pr
   const [videoState, setVideoState] = useState<"idle" | "playing" | "missing">("idle");
   const videoRef = useRef<HTMLVideoElement>(null);
 
+  const timeline = useProjectTimeline(projects.length, mode === "detail");
+
   /* the bookmark state persists across visits (no list view yet, but the
      toggle means something) */
   useEffect(() => {
     try { setSaved(JSON.parse(localStorage.getItem("bsx-saved") || "{}")); } catch { /* private mode */ }
   }, []);
 
-  const rootRef = useRef<HTMLElement>(null);
   const cardRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const closeRef = useRef<HTMLButtonElement>(null);
+  const bsxRef = useRef<HTMLDivElement>(null);
   const toastTimer = useRef<number>(0);
   const rafRef = useRef<number>(0);
   const pointer = useRef({ x: 0, y: 0, clientX: -10000, clientY: -10000 });
@@ -87,41 +78,28 @@ export function BookShowcase({ num = "01", projects, demos }: { num?: string; pr
     toastTimer.current = window.setTimeout(() => setToast(null), 1800);
   }, []);
 
+  /* pointer-reactive tilt on the open card — detail view only */
   const runParallax = useCallback(() => {
     rafRef.current = 0;
-    const root = rootRef.current;
-    if (!root || reduced.current) return;
+    if (reduced.current || mode !== "detail" || selected === null) return;
+    const card = cardRefs.current[selected];
+    if (!card) return;
+    if (flipped) { card.style.setProperty("--detail-yaw", "0deg"); card.style.setProperty("--detail-pitch", "0deg"); return; }
     const p = pointer.current;
-
-    if (mode === "detail" && selected !== null) {
-      const card = cardRefs.current[selected];
-      if (!card) return;
-      if (flipped) { card.style.setProperty("--detail-yaw", "0deg"); card.style.setProperty("--detail-pitch", "0deg"); return; }
-      const b = card.getBoundingClientRect();
-      const cx = b.left + b.width / 2;
-      const cy = b.top + b.height / 2;
-      const inView = p.clientX >= 0 && p.clientX <= window.innerWidth && p.clientY >= 0 && p.clientY <= window.innerHeight;
-      const reachX = p.clientX < cx ? Math.max(cx, 1) : Math.max(window.innerWidth - cx, 1);
-      const reachY = p.clientY < cy ? Math.max(cy, 1) : Math.max(window.innerHeight - cy, 1);
-      const vx = inView ? Math.max(-1, Math.min(1, (p.clientX - cx) / reachX)) : 0;
-      const vy = inView ? Math.max(-1, Math.min(1, (p.clientY - cy) / reachY)) : 0;
-      card.style.setProperty("--detail-yaw", `${vx * 10}deg`);
-      card.style.setProperty("--detail-pitch", `${vy * -7}deg`);
-      return;
-    }
-
-    if (mode !== "gallery") return;
-    root.style.setProperty("--mx", `${p.x * 11}px`);
-    root.style.setProperty("--my", `${p.y * 8}px`);
-    cardRefs.current.forEach((card, i) => {
-      if (!card) return;
-      const depth = 0.5 + (1 - Math.abs(i - 2.5) / 2.5) * 0.5;
-      card.style.setProperty("--local-x", `${p.x * 15 * depth}px`);
-      card.style.setProperty("--local-y", `${p.y * 9 * depth}px`);
-    });
+    const b = card.getBoundingClientRect();
+    const cx = b.left + b.width / 2;
+    const cy = b.top + b.height / 2;
+    const inView = p.clientX >= 0 && p.clientX <= window.innerWidth && p.clientY >= 0 && p.clientY <= window.innerHeight;
+    const reachX = p.clientX < cx ? Math.max(cx, 1) : Math.max(window.innerWidth - cx, 1);
+    const reachY = p.clientY < cy ? Math.max(cy, 1) : Math.max(window.innerHeight - cy, 1);
+    const vx = inView ? Math.max(-1, Math.min(1, (p.clientX - cx) / reachX)) : 0;
+    const vy = inView ? Math.max(-1, Math.min(1, (p.clientY - cy) / reachY)) : 0;
+    card.style.setProperty("--detail-yaw", `${vx * 10}deg`);
+    card.style.setProperty("--detail-pitch", `${vy * -7}deg`);
   }, [mode, selected, flipped]);
 
   useEffect(() => {
+    if (mode !== "detail") return;
     const onMove = (e: PointerEvent) => {
       pointer.current = {
         x: e.clientX / window.innerWidth - 0.5,
@@ -142,9 +120,20 @@ export function BookShowcase({ num = "01", projects, demos }: { num?: string; pr
       window.removeEventListener("pointerleave", onLeave);
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
-  }, [runParallax]);
+  }, [runParallax, mode]);
 
   const openBook = useCallback((i: number) => {
+    /* cancel any in-flight programmatic smooth scroll, then hand the timeline's
+       inline card transforms back to CSS so the detail layout isn't fought */
+    window.scrollTo({ top: window.scrollY, behavior: "instant" });
+    cardRefs.current.forEach((c) => {
+      if (!c) return;
+      c.style.removeProperty("transform");
+      c.style.removeProperty("opacity");
+      c.style.removeProperty("z-index");
+      c.style.removeProperty("visibility");
+      c.style.removeProperty("pointer-events");
+    });
     setSelected(i);
     setMode("detail");
     const card = cardRefs.current[i];
@@ -185,11 +174,16 @@ export function BookShowcase({ num = "01", projects, demos }: { num?: string; pr
     else { v.pause(); setVideoState("idle"); }
   }, [mode, selected, flipped, videoState, projects, openBook, closeDetail]);
 
-  /* after the close transition, return focus to the card and drop the selection */
+  /* after the close transition, return focus to the clicked card (or, if the
+     timeline has since scrolled it out of view, to the gallery) and drop the
+     selection — never re-centre the gallery here */
   useEffect(() => {
     if (mode !== "gallery" || selected === null) return;
     const t = window.setTimeout(() => {
-      cardRefs.current[selected]?.focus({ preventScroll: true });
+      const card = cardRefs.current[selected];
+      const onScreen = card && card.getClientRects().length > 0 && getComputedStyle(card).visibility !== "hidden";
+      if (onScreen) card.focus({ preventScroll: true });
+      else bsxRef.current?.querySelector<HTMLElement>(".bsx-gallery")?.focus({ preventScroll: true });
       setSelected(null);
     }, reduced.current ? 0 : 560);
     return () => window.clearTimeout(t);
@@ -200,6 +194,34 @@ export function BookShowcase({ num = "01", projects, demos }: { num?: string; pr
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
   }, [closeDetail]);
+
+  /* the detail view is a full-viewport modal — keep Tab inside it. The rest of
+     the page is only visually covered, so without this the terminal, footer
+     links and dock stay reachable behind the overlay. */
+  useEffect(() => {
+    if (mode !== "detail" || window.innerWidth <= 820) return;
+    const root = bsxRef.current;
+    if (!root) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Tab") return;
+      const focusables = Array.from(
+        root.querySelectorAll<HTMLElement>('a[href], button:not([disabled]), input:not([disabled]), textarea:not([disabled]), select:not([disabled]), [tabindex]'),
+      ).filter((el) => el.tabIndex >= 0 && el.getClientRects().length > 0);
+      if (!focusables.length) return;
+      const first = focusables[0];
+      const last = focusables[focusables.length - 1];
+      const active = document.activeElement as HTMLElement | null;
+      const inside = !!active && root.contains(active);
+      if (e.shiftKey) {
+        if (!inside || active === first) { e.preventDefault(); last.focus(); }
+      } else if (!inside || active === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener("keydown", onKey, true);
+    return () => document.removeEventListener("keydown", onKey, true);
+  }, [mode, selected, flipped, videoState]);
 
   /* lock page scroll while a book is open — the band takes over the viewport */
   useEffect(() => {
@@ -217,16 +239,40 @@ export function BookShowcase({ num = "01", projects, demos }: { num?: string; pr
   const activeTags = active ? active.tags.filter((t) => !t.startsWith("[")) : [];
 
   return (
-    <section ref={rootRef} id="work" className="bsx" data-mode={mode} data-flipped={flipped ? "true" : undefined} data-playing={videoState === "playing" ? "true" : undefined} aria-label="Selected work">
+    <section
+      ref={timeline.sectionRef}
+      id="work"
+      className="project-timeline"
+      data-simple={timeline.simple ? "true" : undefined}
+      aria-label="Selected work"
+    >
+    <div ref={bsxRef} className="bsx" data-mode={mode} data-flipped={flipped ? "true" : undefined} data-playing={videoState === "playing" ? "true" : undefined}>
       <div className="bsx-topbar">
         <div className="bsx-heading">
           <p className="section-eyebrow">{num} — Projects</p>
           <h2 className="section-title bsx-title">Projects<span className="accent">.</span></h2>
         </div>
-        <span className="bsx-count">06 Projects</span>
+        <span className="bsx-count">{num2(projects.length)} Projects</span>
       </div>
 
-      <div className="bsx-gallery" aria-label="Projects">
+      <div
+        ref={timeline.trackRef}
+        className="bsx-gallery"
+        aria-label="Projects — use the left and right arrow keys to move between them"
+        role="group"
+        tabIndex={mode === "detail" ? -1 : 0}
+        onKeyDown={(e) => {
+          if (mode !== "gallery") return;
+          if (e.target instanceof HTMLElement && /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
+          const next = e.key === "ArrowRight" ? timeline.activeIndex + 1 : e.key === "ArrowLeft" ? timeline.activeIndex - 1 : null;
+          if (next === null) return;
+          e.preventDefault();
+          const clamped = Math.max(0, Math.min(projects.length - 1, next));
+          if (clamped === timeline.activeIndex) return;
+          timeline.goTo(clamped, true);
+          cardRefs.current[clamped]?.focus({ preventScroll: true });
+        }}
+      >
         {projects.map((p, i) => {
           const isOpen = mode === "detail" && selected === i;
           const hasVideo = Boolean(p.demoVideo);
@@ -246,22 +292,18 @@ export function BookShowcase({ num = "01", projects, demos }: { num?: string; pr
             type="button"
             className={`bsx-book-card${selected === i ? " selected" : ""}`}
             aria-label={label}
-            tabIndex={mode === "detail" ? (isOpen && hasVideo ? 0 : -1) : 0}
+            tabIndex={mode === "detail" ? (isOpen && hasVideo ? 0 : -1) : (i === timeline.activeIndex ? 0 : -1)}
             onClick={() => onCardClick(i)}
             onPointerEnter={(e) => (e.currentTarget.dataset.hovered = "true")}
             onPointerLeave={(e) => (e.currentTarget.dataset.hovered = "false")}
-            style={{
-              // @ts-expect-error custom properties
-              "--x": FAN.x[i], "--y": FAN.y[i], "--w": FAN.w[i],
-              "--r": FAN.r[i], "--yaw": FAN.yaw[i], zIndex: selected === i ? 11 : FAN.z[i],
-            }}
           >
             <span className="bsx-book" aria-hidden="true">
               <span className="bsx-book-inner">
                 <span className="bsx-front-cover">
                   {demos[i] ? <span className="bsx-card-try">Try it</span> : null}
                   <span className="bsx-cover-copy">
-                    <span className="bsx-cover-kicker">Project {NUM[i]}</span>
+                    {p.image ? <img className="timeline-project-image" src={p.image} alt="" loading="lazy" /> : null}
+                    <span className="bsx-cover-kicker">Project {num2(i + 1)}</span>
                     <span className="bsx-cover-title">{p.name}</span>
                     <span className="bsx-cover-subtitle">{p.subtitle}</span>
                     <span className="bsx-cover-footer">{p.tags.filter((t) => !t.startsWith("[")).slice(0, 3).join(" · ") || "Repo"}</span>
@@ -291,6 +333,24 @@ export function BookShowcase({ num = "01", projects, demos }: { num?: string; pr
           );
         })}
       </div>
+
+      <nav className="timeline-controls" aria-label="Browse projects" hidden={mode === "detail"}>
+        <button type="button" aria-label="Previous project" disabled={timeline.activeIndex === 0} onClick={() => timeline.goTo(timeline.activeIndex - 1)}>‹</button>
+        <div className="timeline-markers" role="tablist" aria-label="Projects">
+          {projects.map((p, i) => (
+            <button
+              key={p.slug}
+              type="button"
+              aria-label={`Show ${p.name}`}
+              aria-current={timeline.activeIndex === i ? "true" : undefined}
+              onClick={() => timeline.goTo(i)}
+            ><span /></button>
+          ))}
+        </div>
+        <span className="timeline-counter">{num2(timeline.activeIndex + 1)} / {num2(projects.length)}</span>
+        <button type="button" aria-label="Next project" disabled={timeline.activeIndex === projects.length - 1} onClick={() => timeline.goTo(timeline.activeIndex + 1)}>›</button>
+        <p className="timeline-hint">Scroll to move through · click a project to open</p>
+      </nav>
 
       <div className="bsx-scrim" aria-hidden="true" onClick={closeDetail} />
 
@@ -387,6 +447,7 @@ export function BookShowcase({ num = "01", projects, demos }: { num?: string; pr
       ) : null}
 
       <div className="bsx-toast" role="status" aria-live="polite" data-show={toast ? "true" : "false"}>{toast}</div>
+    </div>
     </section>
   );
 }
