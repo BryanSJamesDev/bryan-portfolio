@@ -166,6 +166,14 @@ export function BookShowcase({ num = "01", projects, demos }: { num?: string; pr
     if (v) { v.pause(); try { v.currentTime = 0; } catch { /* not loaded yet */ } }
   }, [selected, mode]);
 
+  /* turning the card back to its front always stops the demo */
+  useEffect(() => {
+    if (flipped) return;
+    const v = videoRef.current;
+    if (v) { v.pause(); try { v.currentTime = 0; } catch { /* not loaded yet */ } }
+    setVideoState("idle");
+  }, [flipped]);
+
   const onCardClick = useCallback((i: number) => {
     if (mode === "gallery") { openBook(i); return; }
     if (selected !== i) return;
@@ -209,7 +217,7 @@ export function BookShowcase({ num = "01", projects, demos }: { num?: string; pr
   const activeTags = active ? active.tags.filter((t) => !t.startsWith("[")) : [];
 
   return (
-    <section ref={rootRef} id="work" className="bsx" data-mode={mode} data-flipped={flipped ? "true" : undefined} aria-label="Selected work">
+    <section ref={rootRef} id="work" className="bsx" data-mode={mode} data-flipped={flipped ? "true" : undefined} data-playing={videoState === "playing" ? "true" : undefined} aria-label="Selected work">
       <div className="bsx-topbar">
         <div className="bsx-heading">
           <p className="section-eyebrow">{num} — Projects</p>
